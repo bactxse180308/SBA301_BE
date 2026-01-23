@@ -5,19 +5,19 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "CUSTOMER_VOUCHER")
-@IdClass(CustomerVoucherId.class)
+@Table(name = "USER_VOUCHER")
+@IdClass(UserVoucherId.class)
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CustomerVoucher {
+public class UserVoucher {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)

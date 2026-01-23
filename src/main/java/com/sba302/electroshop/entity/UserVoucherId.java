@@ -8,7 +8,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class CustomerVoucherId implements Serializable {
-    private Integer customer;
+public class UserVoucherId implements Serializable {
+    private Integer user;
     private Integer voucher;
 }

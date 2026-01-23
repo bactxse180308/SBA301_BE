@@ -1,9 +1,0 @@
-package com.sba302.electroshop.repository;
-
-import com.sba302.electroshop.entity.Customer;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface CustomerRepository extends JpaRepository<Customer, Integer> {
-}
