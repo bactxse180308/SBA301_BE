@@ -20,11 +20,11 @@ public class JwtUtil {
 
     private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
 
-    public String generateAccessToken(UUID userId, String email, List<String> roles, List<String> privileges) {
+    public String generateAccessToken(Integer userId, String email, List<String> roles, List<String> privileges) {
         return generateToken(userId.toString(), email, roles, privileges, ACCESS_EXPIRATION);
     }
 
-    public String generateRefreshToken(UUID userId, String email, List<String> roles, List<String> privileges) {
+    public String generateRefreshToken(Integer userId, String email, List<String> roles, List<String> privileges) {
         return generateToken(userId.toString(), email, roles, privileges, REFRESH_EXPIRATION);
     }
 

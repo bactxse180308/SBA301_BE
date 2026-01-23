@@ -3,12 +3,13 @@ trigger: always_on
 ---
 
 ---
-trigger: manual
----
+
+## trigger: manual
 
 # Spring Boot 3 Code Style Guide
 
 ## 1. Cấu Trúc Package
+
 ```
 com.company.project
 ├── config/            # Spring & Application Configurations
@@ -25,9 +26,10 @@ com.company.project
 ```
 
 ## 2. Naming Conventions
+
 - **Entity**: `User`, `Product`
 - **Repository**: `UserRepository`
-- **Service**: `UserService`, 
+- **Service**: `UserService`,
 - **Service/Impl** `UserServiceImpl`
 - **Controller**: `UserController`
 - **DTO**: `CreateUserRequest`, `UserResponse`
@@ -36,6 +38,7 @@ com.company.project
 - **Variables**: `camelCase`
 
 ## 3. Entity Pattern
+
 ```java
 @Entity
 @Table(name = "users")
@@ -45,13 +48,13 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = false, unique = true)
     private String email;
-    
+
     @Enumerated(EnumType.STRING)
     private UserStatus status;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
@@ -59,18 +62,20 @@ public class User {
 ```
 
 ## 4. Repository Layer
+
 ```java
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
-    
+
     @Query("SELECT u FROM User u WHERE u.status = :status")
     Page<User> findByStatus(@Param("status") UserStatus status, Pageable pageable);
 }
 ```
 
 ## 5. Service Pattern
+
 ```java
 5.1 Service Interface (service/)
 package com.company.project.service;
@@ -142,6 +147,7 @@ Impl có thể để package-private (không public) → ẩn implementation
 ```
 
 ## 6. Controller Pattern
+
 ```java
 @RestController
 @RequestMapping("/api/v1/users")
@@ -149,24 +155,24 @@ Impl có thể để package-private (không public) → ẩn implementation
 @Slf4j
 public class UserController {
     private final UserService userService;
-    
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
         return ApiResponse.success(userService.createUser(request));
     }
-    
+
     @GetMapping("/{id}")
     public ApiResponse<UserResponse> getById(@PathVariable Long id) {
         return ApiResponse.success(userService.getUserById(id));
     }
-    
+
     @GetMapping
     public ApiResponse<Page<UserResponse>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "id,desc") String[] sort) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(parseSort(sort)));
         return ApiResponse.success(userService.getAllUsers(pageable));
     }
@@ -175,16 +181,17 @@ public class UserController {
 ```
 
 ## 7. DTO Pattern
+
 ```java
 // Request DTO
 @Getter @Setter
 public class CreateUserRequest {
     @NotBlank @Email
     private String email;
-    
+
     @NotBlank @Size(min = 2, max = 100)
     private String fullName;
-    
+
     @NotBlank @Size(min = 8)
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).*$")
     private String password;
@@ -202,18 +209,19 @@ public class UserResponse {
 ```
 
 ## 8. Exception Handling
+
 ```java
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-    
+
     @ExceptionHandler(UserNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<Void> handleNotFound(UserNotFoundException ex) {
         log.error("Not found: {}", ex.getMessage());
         return ApiResponse.error(404, ex.getMessage());
     }
-    
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
@@ -226,11 +234,12 @@ public class GlobalExceptionHandler {
 ```
 
 ## 9. Caching Configuration
+
 ```java
 @Configuration
 @EnableCaching
 public class CacheConfig {
-    
+
     @Bean
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager("users", "products");
@@ -244,11 +253,12 @@ public class CacheConfig {
 ```
 
 ## 10. Async Processing
+
 ```java
 @Configuration
 @EnableAsync
 public class AsyncConfig {
-    
+
     @Bean
     public Executor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -271,6 +281,7 @@ public CompletableFuture<Void> sendEmailAsync(String email) {
 ```
 
 ## 11. Pagination Helper
+
 ```java
 // Pageable request
 PageRequest.of(page, size, Sort.by("createdAt").descending())
@@ -288,6 +299,7 @@ public class PageResponse<T> {
 ```
 
 ## 12. API Response Wrapper
+
 ```java
 @Getter @Builder
 public class ApiResponse<T> {
@@ -295,7 +307,7 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private LocalDateTime timestamp;
-    
+
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
             .status(200)
@@ -304,7 +316,7 @@ public class ApiResponse<T> {
             .timestamp(LocalDateTime.now())
             .build();
     }
-    
+
     public static <T> ApiResponse<T> error(int status, String message) {
         return ApiResponse.<T>builder()
             .status(status)
@@ -316,14 +328,15 @@ public class ApiResponse<T> {
 ```
 
 ## 13. Configuration Properties
+
 ```yaml
 spring:
   jpa:
     hibernate.ddl-auto: validate
     show-sql: false
-  
+
   datasource:
-    url: 
+    url:
     username: ${DB_USER:postgres}
     password: ${DB_PASS:password}
     hikari:
@@ -344,72 +357,8 @@ logging.level:
   com.company.project: DEBUG
 ```
 
-15. Flyway Migration Rules (BẮT BUỘC)
-15.1 Nguyên tắc tổng quát
-
-BẮT BUỘC dùng Flyway, KHÔNG dùng hibernate.ddl-auto=create/update
-
-Database schema chỉ được thay đổi thông qua migration
-
-Mỗi thay đổi DB = 1 migration file
-
-Migration KHÔNG được sửa sau khi đã chạy trên môi trường chung
-
-❌ CẤM:
-
-Sửa migration đã chạy
-
-Tạo bảng thủ công trên DB
-
-Dùng ddl-auto=create|update ở prod
-
-✅ CHO PHÉP:
-
-Tạo migration mới để alter / fix
-
-15.2 Cấu trúc thư mục Flyway
-src/main/resources
-└── db
-    └── migration
-        ├── V1__init_schema.sql
-        ├── V2__create_user_table.sql
-        ├── V3__add_role_table.sql
-        ├── V4__add_user_role_fk.sql
-
-
-📌 Naming Convention
-
-V<version>__<description>.sql
-
-
-Ví dụ:
-
-V1__init_schema.sql
-
-V2__create_users_table.sql
-
-V3__add_index_to_users_email.sql
-
-15.3 Versioning Rule
-
-Version chỉ tăng, không giảm
-
-Không được bỏ số
-
-Không được đổi tên file đã commit
-
-Ví dụ hợp lệ:
-
-V1 → V2 → V3 → V4
-
-
-❌ Không hợp lệ:
-
-V1 → V3 (bỏ V2)
-V2 sửa nội dung sau khi đã chạy
-
-
 ## 16. Best Practices Checklist
+
 ✅ service/ chỉ chứa interface (Use Case)
 ✅ service/impl/ chỉ chứa implementation
 ✅ Controller chỉ inject Service interface
@@ -424,4 +373,3 @@ V2 sửa nội dung sau khi đã chạy
 ✅ Async cho long-running tasks
 ✅ Constants thay magic numbers/strings
 ✅ Unit Test dễ mock Service interface
-
