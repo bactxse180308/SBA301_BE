@@ -1,5 +1,6 @@
 package com.sba302.electroshop.entity;
 
+import com.sba302.electroshop.enums.BulkOrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -19,12 +20,13 @@ public class BulkOrder {
     private Integer bulkOrderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50)
-    private String status;
+    private BulkOrderStatus status;
 }

@@ -1,6 +1,7 @@
 package com.sba302.electroshop.mapper;
 
 import com.sba302.electroshop.dto.request.CreateProductRequest;
+import com.sba302.electroshop.dto.request.UpdateProductRequest;
 import com.sba302.electroshop.dto.response.ProductResponse;
 import com.sba302.electroshop.entity.Product;
 import org.mapstruct.*;
@@ -22,4 +23,12 @@ public interface ProductMapper {
     @Mapping(source = "supplier.supplierId", target = "supplierId")
     @Mapping(source = "supplier.supplierName", target = "supplierName")
     ProductResponse toResponse(Product product);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "productId", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "brand", ignore = true)
+    @Mapping(target = "supplier", ignore = true)
+    @Mapping(target = "createdDate", ignore = true)
+    void updateEntity(@MappingTarget Product entity, UpdateProductRequest request);
 }

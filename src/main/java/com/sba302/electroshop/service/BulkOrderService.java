@@ -1,15 +1,21 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.BulkOrder;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateBulkOrderRequest;
+import com.sba302.electroshop.dto.request.CreateCustomizationRequest;
+import com.sba302.electroshop.dto.response.BulkOrderResponse;
+import com.sba302.electroshop.enums.BulkOrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface BulkOrderService {
-    List<BulkOrder> findAll();
 
-    Optional<BulkOrder> findById(Integer id);
+    BulkOrderResponse getById(Integer id);
 
-    BulkOrder save(BulkOrder bulkOrder);
+    Page<BulkOrderResponse> search(Integer userId, BulkOrderStatus status, Pageable pageable);
 
-    void deleteById(Integer id);
+    BulkOrderResponse create(Integer userId, CreateBulkOrderRequest request);
+
+    BulkOrderResponse updateStatus(Integer id, BulkOrderStatus status);
+
+    BulkOrderResponse addCustomization(Integer bulkOrderDetailId, CreateCustomizationRequest request);
 }

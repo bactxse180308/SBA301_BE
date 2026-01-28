@@ -1,15 +1,19 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Supplier;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateSupplierRequest;
+import com.sba302.electroshop.dto.response.SupplierResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface SupplierService {
-    List<Supplier> findAll();
 
-    Optional<Supplier> findById(Integer id);
+    SupplierResponse getById(Integer id);
 
-    Supplier save(Supplier supplier);
+    Page<SupplierResponse> search(String keyword, Pageable pageable);
 
-    void deleteById(Integer id);
+    SupplierResponse create(CreateSupplierRequest request);
+
+    SupplierResponse update(Integer id, CreateSupplierRequest request);
+
+    void delete(Integer id);
 }

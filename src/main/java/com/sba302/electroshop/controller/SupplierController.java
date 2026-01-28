@@ -1,11 +1,16 @@
 package com.sba302.electroshop.controller;
 
+import com.sba302.electroshop.dto.request.CreateSupplierRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
-import com.sba302.electroshop.entity.Supplier;
+import com.sba302.electroshop.dto.response.SupplierResponse;
 import com.sba302.electroshop.service.SupplierService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/suppliers")
@@ -14,26 +19,35 @@ public class SupplierController {
 
     private final SupplierService supplierService;
 
-    @GetMapping
-    public ApiResponse<List<Supplier>> getAll() {
-        return ApiResponse.success(supplierService.findAll());
+    @GetMapping("/{id}")
+    public ApiResponse<SupplierResponse> getById(@PathVariable Integer id) {
+        return ApiResponse.success(supplierService.getById(id));
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<Supplier> getById(@PathVariable Integer id) {
-        return supplierService.findById(id)
-                .map(ApiResponse::success)
-                .orElse(ApiResponse.error(404, "Supplier not found"));
+    @GetMapping
+    public ApiResponse<Page<SupplierResponse>> search(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.success(supplierService.search(keyword, pageable));
     }
 
     @PostMapping
-    public ApiResponse<Supplier> create(@RequestBody Supplier supplier) {
-        return ApiResponse.success(supplierService.save(supplier));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<SupplierResponse> create(@Valid @RequestBody CreateSupplierRequest request) {
+        return ApiResponse.success(supplierService.create(request));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<SupplierResponse> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody CreateSupplierRequest request) {
+        return ApiResponse.success(supplierService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
-        supplierService.deleteById(id);
+        supplierService.delete(id);
         return ApiResponse.success(null);
     }
 }

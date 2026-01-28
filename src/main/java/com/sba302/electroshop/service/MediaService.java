@@ -1,15 +1,20 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Media;
+import com.sba302.electroshop.dto.request.CreateMediaRequest;
+import com.sba302.electroshop.dto.response.MediaResponse;
 import java.util.List;
-import java.util.Optional;
 
 public interface MediaService {
-    List<Media> findAll();
 
-    Optional<Media> findById(Integer id);
+    MediaResponse getById(Integer id);
 
-    Media save(Media media);
+    List<MediaResponse> getByProduct(Integer productId);
 
-    void deleteById(Integer id);
+    MediaResponse create(CreateMediaRequest request);
+
+    MediaResponse update(Integer id, CreateMediaRequest request);
+
+    void delete(Integer id);
+
+    void updateSortOrder(Integer id, Integer sortOrder);
 }

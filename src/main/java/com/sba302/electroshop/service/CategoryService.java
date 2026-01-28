@@ -1,15 +1,19 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Category;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateCategoryRequest;
+import com.sba302.electroshop.dto.response.CategoryResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CategoryService {
-    List<Category> findAll();
 
-    Optional<Category> findById(Integer id);
+    CategoryResponse getById(Integer id);
 
-    Category save(Category category);
+    Page<CategoryResponse> search(String keyword, Pageable pageable);
 
-    void deleteById(Integer id);
+    CategoryResponse create(CreateCategoryRequest request);
+
+    CategoryResponse update(Integer id, CreateCategoryRequest request);
+
+    void delete(Integer id);
 }

@@ -1,15 +1,16 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Wishlist;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.response.WishlistResponse;
 
 public interface WishlistService {
-    List<Wishlist> findAll();
 
-    Optional<Wishlist> findById(Integer id);
+    WishlistResponse getByUser(Integer userId);
 
-    Wishlist save(Wishlist wishlist);
+    WishlistResponse addItem(Integer userId, Integer productId);
 
-    void deleteById(Integer id);
+    void removeItem(Integer userId, Integer productId);
+
+    void clearWishlist(Integer userId);
+
+    boolean isProductInWishlist(Integer userId, Integer productId);
 }

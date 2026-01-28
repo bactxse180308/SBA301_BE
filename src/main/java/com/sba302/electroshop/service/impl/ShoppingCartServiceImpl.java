@@ -1,40 +1,56 @@
 package com.sba302.electroshop.service.impl;
 
-import com.sba302.electroshop.entity.ShoppingCart;
+import com.sba302.electroshop.dto.request.AddToCartRequest;
+import com.sba302.electroshop.dto.response.CartResponse;
+import com.sba302.electroshop.repository.CartItemRepository;
+import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.repository.ShoppingCartRepository;
+import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.service.ShoppingCartService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class ShoppingCartServiceImpl implements ShoppingCartService {
+@Slf4j
+class ShoppingCartServiceImpl implements ShoppingCartService {
 
     private final ShoppingCartRepository shoppingCartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
     @Override
-    public List<ShoppingCart> findAll() {
-        return shoppingCartRepository.findAll();
-    }
-
-    @Override
-    public Optional<ShoppingCart> findById(Integer id) {
-        return shoppingCartRepository.findById(id);
-    }
-
-    @Override
-    @Transactional
-    public ShoppingCart save(ShoppingCart shoppingCart) {
-        return shoppingCartRepository.save(shoppingCart);
+    public CartResponse getByUser(Integer userId) {
+        // TODO: Implement - find cart by user, map to response with items
+        return null;
     }
 
     @Override
     @Transactional
-    public void deleteById(Integer id) {
-        shoppingCartRepository.deleteById(id);
+    public CartResponse addItem(Integer userId, AddToCartRequest request) {
+        // TODO: Implement - add item to cart or update quantity if exists
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public CartResponse updateItemQuantity(Integer userId, Integer productId, Integer quantity) {
+        // TODO: Implement - update item quantity in cart
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void removeItem(Integer userId, Integer productId) {
+        // TODO: Implement - remove item from cart
+    }
+
+    @Override
+    @Transactional
+    public void clearCart(Integer userId) {
+        // TODO: Implement - clear all items from user's cart
     }
 }

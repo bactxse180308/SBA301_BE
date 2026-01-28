@@ -1,5 +1,6 @@
 package com.sba302.electroshop.entity;
 
+import com.sba302.electroshop.enums.CustomizationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -28,8 +29,9 @@ public class OrderCustomization {
     @Column(name = "note", length = 2000)
     private String note;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50)
-    private String status;
+    private CustomizationStatus status;
 
     @Column(name = "extra_fee")
     private BigDecimal extraFee;

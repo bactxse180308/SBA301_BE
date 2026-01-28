@@ -14,11 +14,11 @@ public class StoreBranch {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "warehouse_id")
-    private Integer warehouseId;
+    @Column(name = "branch_id")
+    private Integer branchId;
 
-    @Column(name = "warehouse_name", nullable = false)
-    private String warehouseName;
+    @Column(name = "branch_name", nullable = false)
+    private String branchName;
 
     @Column(name = "location", length = 500)
     private String location;

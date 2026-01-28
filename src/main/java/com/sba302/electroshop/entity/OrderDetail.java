@@ -25,8 +25,8 @@ public class OrderDetail {
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "warehouse_id")
-    private StoreBranch warehouse;
+    @JoinColumn(name = "branch_id")
+    private StoreBranch branch;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

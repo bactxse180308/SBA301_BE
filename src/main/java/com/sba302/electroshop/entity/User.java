@@ -1,5 +1,6 @@
 package com.sba302.electroshop.entity;
 
+import com.sba302.electroshop.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -36,8 +37,9 @@ public class User {
     @Column(name = "registration_date")
     private LocalDateTime registrationDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50)
-    private String status; // ACTIVE, INACTIVE
+    private UserStatus status;
 
     @Column(name = "reward_point")
     private Integer rewardPoint;
@@ -55,7 +57,7 @@ public class User {
             rewardPoint = 0;
         }
         if (status == null) {
-            status = "ACTIVE";
+            status = UserStatus.ACTIVE;
         }
     }
 }

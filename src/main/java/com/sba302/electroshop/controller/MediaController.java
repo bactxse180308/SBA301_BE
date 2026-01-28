@@ -1,10 +1,14 @@
 package com.sba302.electroshop.controller;
 
+import com.sba302.electroshop.dto.request.CreateMediaRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
-import com.sba302.electroshop.entity.Media;
+import com.sba302.electroshop.dto.response.MediaResponse;
 import com.sba302.electroshop.service.MediaService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -14,26 +18,41 @@ public class MediaController {
 
     private final MediaService mediaService;
 
-    @GetMapping
-    public ApiResponse<List<Media>> getAll() {
-        return ApiResponse.success(mediaService.findAll());
+    @GetMapping("/{id}")
+    public ApiResponse<MediaResponse> getById(@PathVariable Integer id) {
+        return ApiResponse.success(mediaService.getById(id));
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<Media> getById(@PathVariable Integer id) {
-        return mediaService.findById(id)
-                .map(ApiResponse::success)
-                .orElse(ApiResponse.error(404, "Media not found"));
+    @GetMapping("/product/{productId}")
+    public ApiResponse<List<MediaResponse>> getByProduct(@PathVariable Integer productId) {
+        return ApiResponse.success(mediaService.getByProduct(productId));
     }
 
     @PostMapping
-    public ApiResponse<Media> create(@RequestBody Media media) {
-        return ApiResponse.success(mediaService.save(media));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<MediaResponse> create(@Valid @RequestBody CreateMediaRequest request) {
+        return ApiResponse.success(mediaService.create(request));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<MediaResponse> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody CreateMediaRequest request) {
+        return ApiResponse.success(mediaService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
-        mediaService.deleteById(id);
+        mediaService.delete(id);
+        return ApiResponse.success(null);
+    }
+
+    @PatchMapping("/{id}/sort-order")
+    public ApiResponse<Void> updateSortOrder(
+            @PathVariable Integer id,
+            @RequestParam Integer sortOrder) {
+        mediaService.updateSortOrder(id, sortOrder);
         return ApiResponse.success(null);
     }
 }

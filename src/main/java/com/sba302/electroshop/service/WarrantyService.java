@@ -1,15 +1,21 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Warranty;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateWarrantyRequest;
+import com.sba302.electroshop.dto.response.WarrantyResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface WarrantyService {
-    List<Warranty> findAll();
 
-    Optional<Warranty> findById(Integer id);
+    WarrantyResponse getById(Integer id);
 
-    Warranty save(Warranty warranty);
+    Page<WarrantyResponse> getByProduct(Integer productId, Pageable pageable);
 
-    void deleteById(Integer id);
+    WarrantyResponse create(CreateWarrantyRequest request);
+
+    WarrantyResponse update(Integer id, CreateWarrantyRequest request);
+
+    void delete(Integer id);
+
+    boolean isWarrantyValid(Integer warrantyId);
 }

@@ -1,15 +1,23 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.StoreBranch;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateStoreBranchRequest;
+import com.sba302.electroshop.dto.response.StoreBranchResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface StoreBranchService {
-    List<StoreBranch> findAll();
 
-    Optional<StoreBranch> findById(Integer id);
+    StoreBranchResponse getById(Integer id);
 
-    StoreBranch save(StoreBranch storeBranch);
+    Page<StoreBranchResponse> search(String keyword, Pageable pageable);
 
-    void deleteById(Integer id);
+    StoreBranchResponse create(CreateStoreBranchRequest request);
+
+    StoreBranchResponse update(Integer id, CreateStoreBranchRequest request);
+
+    void delete(Integer id);
+
+    Integer getStockQuantity(Integer branchId, Integer productId);
+
+    void updateStock(Integer branchId, Integer productId, Integer quantity);
 }

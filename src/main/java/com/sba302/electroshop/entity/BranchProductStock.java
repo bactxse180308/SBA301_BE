@@ -16,8 +16,8 @@ public class BranchProductStock {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "warehouse_id")
-    private StoreBranch warehouse;
+    @JoinColumn(name = "branch_id")
+    private StoreBranch branch;
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)

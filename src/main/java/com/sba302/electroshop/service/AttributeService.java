@@ -1,15 +1,18 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Attribute;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.response.AttributeResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AttributeService {
-    List<Attribute> findAll();
 
-    Optional<Attribute> findById(Integer id);
+    AttributeResponse getById(Integer id);
 
-    Attribute save(Attribute attribute);
+    Page<AttributeResponse> search(String keyword, Pageable pageable);
 
-    void deleteById(Integer id);
+    AttributeResponse create(String attributeName);
+
+    AttributeResponse update(Integer id, String attributeName);
+
+    void delete(Integer id);
 }

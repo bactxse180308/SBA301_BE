@@ -1,11 +1,17 @@
 package com.sba302.electroshop.controller;
 
+import com.sba302.electroshop.dto.request.CreateReviewRequest;
+import com.sba302.electroshop.dto.request.UpdateReviewRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
-import com.sba302.electroshop.entity.Review;
+import com.sba302.electroshop.dto.response.ReviewResponse;
 import com.sba302.electroshop.service.ReviewService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reviews")
@@ -14,26 +20,43 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @GetMapping
-    public ApiResponse<List<Review>> getAll() {
-        return ApiResponse.success(reviewService.findAll());
+    @GetMapping("/{id}")
+    public ApiResponse<ReviewResponse> getById(@PathVariable Integer id) {
+        return ApiResponse.success(reviewService.getById(id));
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<Review> getById(@PathVariable Integer id) {
-        return reviewService.findById(id)
-                .map(ApiResponse::success)
-                .orElse(ApiResponse.error(404, "Review not found"));
+    @GetMapping
+    public ApiResponse<Page<ReviewResponse>> search(
+            @RequestParam(required = false) Integer productId,
+            @RequestParam(required = false) Integer userId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.success(reviewService.search(productId, userId, pageable));
+    }
+
+    @GetMapping("/product/{productId}/rating")
+    public ApiResponse<Double> getAverageRating(@PathVariable Integer productId) {
+        return ApiResponse.success(reviewService.getAverageRating(productId));
     }
 
     @PostMapping
-    public ApiResponse<Review> create(@RequestBody Review review) {
-        return ApiResponse.success(reviewService.save(review));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<ReviewResponse> create(
+            @RequestParam Integer userId,
+            @Valid @RequestBody CreateReviewRequest request) {
+        return ApiResponse.success(reviewService.create(userId, request));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<ReviewResponse> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdateReviewRequest request) {
+        return ApiResponse.success(reviewService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
-        reviewService.deleteById(id);
+        reviewService.delete(id);
         return ApiResponse.success(null);
     }
 }
