@@ -1,15 +1,17 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.ShoppingCart;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.AddToCartRequest;
+import com.sba302.electroshop.dto.response.CartResponse;
 
 public interface ShoppingCartService {
-    List<ShoppingCart> findAll();
 
-    Optional<ShoppingCart> findById(Integer id);
+    CartResponse getByUser(Integer userId);
 
-    ShoppingCart save(ShoppingCart shoppingCart);
+    CartResponse addItem(Integer userId, AddToCartRequest request);
 
-    void deleteById(Integer id);
+    CartResponse updateItemQuantity(Integer userId, Integer productId, Integer quantity);
+
+    void removeItem(Integer userId, Integer productId);
+
+    void clearCart(Integer userId);
 }

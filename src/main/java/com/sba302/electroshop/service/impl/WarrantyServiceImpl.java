@@ -1,40 +1,62 @@
 package com.sba302.electroshop.service.impl;
 
-import com.sba302.electroshop.entity.Warranty;
+import com.sba302.electroshop.dto.request.CreateWarrantyRequest;
+import com.sba302.electroshop.dto.response.WarrantyResponse;
+import com.sba302.electroshop.mapper.WarrantyMapper;
+import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.repository.WarrantyRepository;
 import com.sba302.electroshop.service.WarrantyService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class WarrantyServiceImpl implements WarrantyService {
+@Slf4j
+class WarrantyServiceImpl implements WarrantyService {
 
     private final WarrantyRepository warrantyRepository;
+    private final ProductRepository productRepository;
+    private final WarrantyMapper warrantyMapper;
 
     @Override
-    public List<Warranty> findAll() {
-        return warrantyRepository.findAll();
+    public WarrantyResponse getById(Integer id) {
+        // TODO: Implement - find by id, map to response
+        return null;
     }
 
     @Override
-    public Optional<Warranty> findById(Integer id) {
-        return warrantyRepository.findById(id);
+    public Page<WarrantyResponse> getByProduct(Integer productId, Pageable pageable) {
+        // TODO: Implement - get warranties for product
+        return null;
     }
 
     @Override
     @Transactional
-    public Warranty save(Warranty warranty) {
-        return warrantyRepository.save(warranty);
+    public WarrantyResponse create(CreateWarrantyRequest request) {
+        // TODO: Implement - create warranty
+        return null;
     }
 
     @Override
     @Transactional
-    public void deleteById(Integer id) {
-        warrantyRepository.deleteById(id);
+    public WarrantyResponse update(Integer id, CreateWarrantyRequest request) {
+        // TODO: Implement - update warranty
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void delete(Integer id) {
+        // TODO: Implement - delete warranty
+    }
+
+    @Override
+    public boolean isWarrantyValid(Integer warrantyId) {
+        // TODO: Implement - check if warranty is still valid
+        return false;
     }
 }

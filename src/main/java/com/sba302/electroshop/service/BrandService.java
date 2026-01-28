@@ -1,15 +1,19 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Brand;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateBrandRequest;
+import com.sba302.electroshop.dto.response.BrandResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface BrandService {
-    List<Brand> findAll();
 
-    Optional<Brand> findById(Integer id);
+    BrandResponse getById(Integer id);
 
-    Brand save(Brand brand);
+    Page<BrandResponse> search(String keyword, Pageable pageable);
 
-    void deleteById(Integer id);
+    BrandResponse create(CreateBrandRequest request);
+
+    BrandResponse update(Integer id, CreateBrandRequest request);
+
+    void delete(Integer id);
 }

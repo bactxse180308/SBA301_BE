@@ -1,40 +1,53 @@
 package com.sba302.electroshop.service.impl;
 
-import com.sba302.electroshop.entity.Attribute;
+import com.sba302.electroshop.dto.response.AttributeResponse;
+import com.sba302.electroshop.mapper.AttributeMapper;
 import com.sba302.electroshop.repository.AttributeRepository;
 import com.sba302.electroshop.service.AttributeService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class AttributeServiceImpl implements AttributeService {
+@Slf4j
+class AttributeServiceImpl implements AttributeService {
 
     private final AttributeRepository attributeRepository;
+    private final AttributeMapper attributeMapper;
 
     @Override
-    public List<Attribute> findAll() {
-        return attributeRepository.findAll();
+    public AttributeResponse getById(Integer id) {
+        // TODO: Implement - find by id, map to response
+        return null;
     }
 
     @Override
-    public Optional<Attribute> findById(Integer id) {
-        return attributeRepository.findById(id);
+    public Page<AttributeResponse> search(String keyword, Pageable pageable) {
+        // TODO: Implement - search attributes by name
+        return null;
     }
 
     @Override
     @Transactional
-    public Attribute save(Attribute attribute) {
-        return attributeRepository.save(attribute);
+    public AttributeResponse create(String attributeName) {
+        // TODO: Implement - create attribute
+        return null;
     }
 
     @Override
     @Transactional
-    public void deleteById(Integer id) {
-        attributeRepository.deleteById(id);
+    public AttributeResponse update(Integer id, String attributeName) {
+        // TODO: Implement - update attribute
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void delete(Integer id) {
+        // TODO: Implement - delete attribute
     }
 }

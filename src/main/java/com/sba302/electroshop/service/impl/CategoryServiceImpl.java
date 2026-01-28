@@ -1,40 +1,54 @@
 package com.sba302.electroshop.service.impl;
 
-import com.sba302.electroshop.entity.Category;
+import com.sba302.electroshop.dto.request.CreateCategoryRequest;
+import com.sba302.electroshop.dto.response.CategoryResponse;
+import com.sba302.electroshop.mapper.CategoryMapper;
 import com.sba302.electroshop.repository.CategoryRepository;
 import com.sba302.electroshop.service.CategoryService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class CategoryServiceImpl implements CategoryService {
+@Slf4j
+class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
 
     @Override
-    public List<Category> findAll() {
-        return categoryRepository.findAll();
+    public CategoryResponse getById(Integer id) {
+        // TODO: Implement - find by id, map to response
+        return null;
     }
 
     @Override
-    public Optional<Category> findById(Integer id) {
-        return categoryRepository.findById(id);
+    public Page<CategoryResponse> search(String keyword, Pageable pageable) {
+        // TODO: Implement - search categories by name
+        return null;
     }
 
     @Override
     @Transactional
-    public Category save(Category category) {
-        return categoryRepository.save(category);
+    public CategoryResponse create(CreateCategoryRequest request) {
+        // TODO: Implement - create category
+        return null;
     }
 
     @Override
     @Transactional
-    public void deleteById(Integer id) {
-        categoryRepository.deleteById(id);
+    public CategoryResponse update(Integer id, CreateCategoryRequest request) {
+        // TODO: Implement - update category
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void delete(Integer id) {
+        // TODO: Implement - delete category
     }
 }

@@ -9,6 +9,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class BranchProductStockId implements Serializable {
-    private Integer warehouse;
+    private Integer branch;
     private Integer product;
 }

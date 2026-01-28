@@ -1,15 +1,22 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Review;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateReviewRequest;
+import com.sba302.electroshop.dto.request.UpdateReviewRequest;
+import com.sba302.electroshop.dto.response.ReviewResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ReviewService {
-    List<Review> findAll();
 
-    Optional<Review> findById(Integer id);
+    ReviewResponse getById(Integer id);
 
-    Review save(Review review);
+    Page<ReviewResponse> search(Integer productId, Integer userId, Pageable pageable);
 
-    void deleteById(Integer id);
+    Double getAverageRating(Integer productId);
+
+    ReviewResponse create(Integer userId, CreateReviewRequest request);
+
+    ReviewResponse update(Integer reviewId, UpdateReviewRequest request);
+
+    void delete(Integer id);
 }

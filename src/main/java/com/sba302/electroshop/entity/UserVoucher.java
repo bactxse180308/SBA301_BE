@@ -1,5 +1,6 @@
 package com.sba302.electroshop.entity;
 
+import com.sba302.electroshop.enums.VoucherStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -24,8 +25,9 @@ public class UserVoucher {
     @JoinColumn(name = "voucher_id")
     private Voucher voucher;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
-    private String status;
+    private VoucherStatus status;
 
     @Column(name = "assigned_at")
     private LocalDateTime assignedAt;

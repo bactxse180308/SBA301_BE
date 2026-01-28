@@ -1,11 +1,17 @@
 package com.sba302.electroshop.controller;
 
+import com.sba302.electroshop.dto.request.CreateOrderRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
-import com.sba302.electroshop.entity.Order;
+import com.sba302.electroshop.dto.response.OrderResponse;
+import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -14,26 +20,44 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @GetMapping
-    public ApiResponse<List<Order>> getAll() {
-        return ApiResponse.success(orderService.findAll());
+    @GetMapping("/{id}")
+    public ApiResponse<OrderResponse> getById(@PathVariable Integer id) {
+        return ApiResponse.success(orderService.getById(id));
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<Order> getById(@PathVariable Integer id) {
-        return orderService.findById(id)
-                .map(ApiResponse::success)
-                .orElse(ApiResponse.error(404, "Order not found"));
+    @GetMapping
+    public ApiResponse<Page<OrderResponse>> search(
+            @RequestParam(required = false) Integer userId,
+            @RequestParam(required = false) OrderStatus status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.success(orderService.search(userId, status, pageable));
     }
 
     @PostMapping
-    public ApiResponse<Order> create(@RequestBody Order order) {
-        return ApiResponse.success(orderService.save(order));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<OrderResponse> placeOrder(
+            @RequestParam Integer userId,
+            @Valid @RequestBody CreateOrderRequest request) {
+        return ApiResponse.success(orderService.placeOrder(userId, request));
     }
 
-    @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable Integer id) {
-        orderService.deleteById(id);
+    @PatchMapping("/{id}/status")
+    public ApiResponse<OrderResponse> updateStatus(
+            @PathVariable Integer id,
+            @RequestParam OrderStatus status) {
+        return ApiResponse.success(orderService.updateStatus(id, status));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<Void> cancelOrder(@PathVariable Integer id) {
+        orderService.cancelOrder(id);
         return ApiResponse.success(null);
+    }
+
+    @PostMapping("/{id}/voucher")
+    public ApiResponse<OrderResponse> applyVoucher(
+            @PathVariable Integer id,
+            @RequestParam String voucherCode) {
+        return ApiResponse.success(orderService.applyVoucher(id, voucherCode));
     }
 }

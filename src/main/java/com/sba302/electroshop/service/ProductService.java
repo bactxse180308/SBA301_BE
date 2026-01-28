@@ -1,15 +1,24 @@
 package com.sba302.electroshop.service;
 
-import com.sba302.electroshop.entity.Product;
-import java.util.List;
-import java.util.Optional;
+import com.sba302.electroshop.dto.request.CreateProductRequest;
+import com.sba302.electroshop.dto.request.UpdateProductRequest;
+import com.sba302.electroshop.dto.response.ProductResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ProductService {
-    List<Product> findAll();
 
-    Optional<Product> findById(Integer id);
+    // Query operations (combined search with optional filters)
+    ProductResponse getById(Integer id);
 
-    Product save(Product product);
+    Page<ProductResponse> search(String keyword, Integer categoryId, Integer brandId, Pageable pageable);
 
-    void deleteById(Integer id);
+    // Command operations
+    ProductResponse create(CreateProductRequest request);
+
+    ProductResponse update(Integer id, UpdateProductRequest request);
+
+    void delete(Integer id);
+
+    void updateStock(Integer id, Integer quantity);
 }
