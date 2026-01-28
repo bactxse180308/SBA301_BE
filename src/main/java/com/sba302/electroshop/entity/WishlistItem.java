@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "WISHLIST_ITEM")
-@IdClass(WishlistItemId.class)
 @Getter
 @Setter
 @Builder
@@ -15,13 +14,16 @@ import java.time.LocalDateTime;
 public class WishlistItem {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "wishlist_item_id")
+    private Integer wishlistItemId;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wishlist_id")
+    @JoinColumn(name = "wishlist_id", nullable = false)
     private Wishlist wishlist;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Column(name = "created_date")
