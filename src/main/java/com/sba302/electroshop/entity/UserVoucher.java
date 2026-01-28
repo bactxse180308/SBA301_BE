@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "USER_VOUCHER")
-@IdClass(UserVoucherId.class)
 @Getter
 @Setter
 @Builder
@@ -16,13 +15,16 @@ import java.time.LocalDateTime;
 public class UserVoucher {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_voucher_id")
+    private Integer userVoucherId;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "voucher_id")
+    @JoinColumn(name = "voucher_id", nullable = false)
     private Voucher voucher;
 
     @Enumerated(EnumType.STRING)

@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "BRANCH_PRODUCT_STOCK")
-@IdClass(BranchProductStockId.class)
 @Getter
 @Setter
 @Builder
@@ -15,13 +14,16 @@ import java.time.LocalDateTime;
 public class BranchProductStock {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "branch_product_stock_id")
+    private Integer branchProductStockId;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "branch_id")
+    @JoinColumn(name = "branch_id", nullable = false)
     private StoreBranch branch;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Column(name = "quantity", nullable = false)

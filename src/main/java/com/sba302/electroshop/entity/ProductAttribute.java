@@ -5,7 +5,6 @@ import lombok.*;
 
 @Entity
 @Table(name = "PRODUCT_ATTRIBUTE")
-@IdClass(ProductAttributeId.class)
 @Getter
 @Setter
 @Builder
@@ -14,13 +13,16 @@ import lombok.*;
 public class ProductAttribute {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_attribute_id")
+    private Integer productAttributeId;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attribute_id")
+    @JoinColumn(name = "attribute_id", nullable = false)
     private Attribute attribute;
 
     @Column(name = "value", length = 500)

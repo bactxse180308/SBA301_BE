@@ -1,10 +1,11 @@
 package com.sba302.electroshop.repository;
 
 import com.sba302.electroshop.entity.UserVoucher;
-import com.sba302.electroshop.entity.UserVoucherId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
-public interface UserVoucherRepository extends JpaRepository<UserVoucher, UserVoucherId> {
+public interface UserVoucherRepository extends JpaRepository<UserVoucher, Integer> {
 }
