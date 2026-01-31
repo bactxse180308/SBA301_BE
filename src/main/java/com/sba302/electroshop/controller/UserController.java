@@ -1,22 +1,36 @@
 package com.sba302.electroshop.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.sba302.electroshop.dto.request.CreateUserRequest;
 import com.sba302.electroshop.dto.request.UpdateUserRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
 import com.sba302.electroshop.dto.response.UserResponse;
 import com.sba302.electroshop.enums.UserStatus;
 import com.sba302.electroshop.service.UserService;
+
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -39,13 +53,17 @@ public class UserController {
         return ApiResponse.success(userService.getByEmail(email));
     }
 
-    @Operation(summary = "Search users", description = "Search users with optional filters: keyword and status (Admin only)")
+    @Operation(summary = "Search users", description = "Search users with optional filters: email, phoneNumber and status (Admin only)")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ApiResponse<Page<UserResponse>> search(
-            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) UserStatus status,
-            @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.success(userService.search(keyword, status, pageable));
+            @Parameter(description = "Pagination and sorting parameters. Default sort: fullName,asc", 
+                       schema = @Schema(example = "{\"page\": 0, \"size\": 20, \"sort\": [\"fullName,asc\"]}"))
+            @PageableDefault(size = 20, sort = "fullName", direction = org.springframework.data.domain.Sort.Direction.ASC) Pageable pageable) {
+        return ApiResponse.success(userService.search(email, phoneNumber, status, pageable));
     }
 
     @Operation(summary = "Create new user", description = "Create a new user with role assignment (Admin only)")
