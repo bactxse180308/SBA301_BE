@@ -2,6 +2,7 @@ package com.sba302.electroshop.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -15,6 +16,10 @@ public class CreateUserRequest {
     @Email(message = "Email must be valid")
     private String email;
 
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
+    private String password;
+
     @NotBlank(message = "Full name is required")
     @Size(min = 2, max = 255, message = "Full name must be between 2 and 255 characters")
     private String fullName;
@@ -25,5 +30,6 @@ public class CreateUserRequest {
     @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;
 
-    private String status;
+    @NotNull(message = "Role ID is required")
+    private Integer roleId;
 }

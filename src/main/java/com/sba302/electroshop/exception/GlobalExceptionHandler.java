@@ -89,6 +89,14 @@ public class GlobalExceptionHandler {
                         LocalDateTime.now()));
     }
 
+    // ✅ 5.5️⃣ Lỗi tài nguyên xung đột (duplicate email, code, etc.)
+    @ExceptionHandler(ResourceConflictException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResourceConflict(ResourceConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                new ApiResponse<>(409, ex.getMessage() != null ? ex.getMessage() : "Resource conflict", null,
+                        LocalDateTime.now()));
+    }
+
     // ✅ 6️⃣ Lỗi xung đột dữ liệu trong DB (ví dụ: email trùng, unique constraint)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
