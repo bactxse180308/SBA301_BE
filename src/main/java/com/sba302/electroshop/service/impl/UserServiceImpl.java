@@ -12,10 +12,12 @@ import com.sba302.electroshop.mapper.UserMapper;
 import com.sba302.electroshop.repository.RoleRepository;
 import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.service.UserService;
+import com.sba302.electroshop.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,9 +45,26 @@ class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> search(String keyword, UserStatus status, Pageable pageable) {
-        // TODO: Implement - search with optional filters (keyword, status)
-        return null;
+    public Page<UserResponse> search(String email, String phoneNumber, UserStatus status, Pageable pageable) {
+        log.info("Searching users with filters - email: {}, phoneNumber: {}, status: {}", email, phoneNumber, status);
+        
+        try {
+            // Build specification with filters
+            Specification<User> spec = UserSpecification.filterUsers(email, phoneNumber, status);
+            
+            // Execute query with specification
+            Page<User> users = userRepository.findAll(spec, pageable);
+            
+            log.info("Found {} users matching search criteria", users.getTotalElements());
+            
+            // Map to response
+            return users.map(userMapper::toResponse);
+            
+        } catch (Exception e) {
+            log.error("Error occurred while searching users with filters - email: {}, phoneNumber: {}, status: {}", 
+                    email, phoneNumber, status, e);
+            throw e;
+        }
     }
 
     @Override
