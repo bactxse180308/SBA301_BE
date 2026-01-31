@@ -62,14 +62,19 @@ class UserServiceImpl implements UserService {
         Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + request.getRoleId()));
 
-        // Map to entity
-        User user = mapToEntity(request, role);
+        // Map to entity using mapper
+        User user = userMapper.toEntity(request);
+
+        // Set password (encoded), role, and status manually
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(role);
+        user.setStatus(UserStatus.ACTIVE);
 
         // Save
         user = userRepository.save(user);
         log.info("User created successfully with id: {}", user.getUserId());
 
-        return mapToResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -95,40 +100,5 @@ class UserServiceImpl implements UserService {
     @Transactional
     public void delete(Integer id) {
         // TODO: Implement - delete user by id
-    }
-
-    // ===== MAPPER METHODS =====
-
-    /**
-     * Map CreateUserRequest -> Entity
-     */
-    private User mapToEntity(CreateUserRequest request, Role role) {
-        return User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
-                .phoneNumber(request.getPhoneNumber())
-                .address(request.getAddress())
-                .role(role)
-                .rewardPoint(0)
-                .build();
-    }
-
-    /**
-     * Map User Entity -> UserResponse
-     */
-    private UserResponse mapToResponse(User user) {
-        return UserResponse.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .phoneNumber(user.getPhoneNumber())
-                .address(user.getAddress())
-                .role(user.getRole() != null ? user.getRole().getRoleName() : null)
-                .status(user.getStatus() != null ? user.getStatus().name() : null)
-                .rewardPoint(user.getRewardPoint())
-                .registrationDate(user.getRegistrationDate())
-                .isActive(user.getStatus() == UserStatus.ACTIVE)
-                .build();
     }
 }
