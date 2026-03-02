@@ -12,6 +12,8 @@ public class BulkOrderResponse {
     private Integer bulkOrderId;
     private Integer userId;
     private String userFullName;
+    private Integer companyId;
+    private String companyName;
     private LocalDateTime createdAt;
     private String status;
 }
