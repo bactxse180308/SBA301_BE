@@ -11,9 +11,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SupplierRepository extends JpaRepository<Supplier, Integer> {
-    Page<Supplier> findSupplierBySupplierNameIgnoreCase(String keyword, Pageable pageable);
-
     Page<Supplier> findSupplierBySupplierNameContainingIgnoreCase(String keyword, Pageable pageable);
 
-    boolean existsBySupplierNameIgnoreCase(@NotBlank(message = "Supplier name is required") @Size(min = 2, max = 255, message = "Supplier name must be between 2 and 255 characters") String supplierName);
+    boolean existsBySupplierNameIgnoreCase(String supplierName);
+
+    boolean existsBySupplierNameIgnoreCaseAndSupplierIdNot(String supplierName, Integer supplierId);
 }

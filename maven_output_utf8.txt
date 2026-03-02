@@ -1,0 +1,43 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.sba302:electronicsShop >---------------------
+[INFO] Building electroshop 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ electronicsShop ---
+[INFO] Deleting E:\SBA301\SBA301_BE\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ electronicsShop ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ electronicsShop ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 185 source files with javac [debug parameters release 17] to target\classes
+[INFO] Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /E:/SBA301/SBA301_BE/src/main/java/com/sba302/electroshop/service/impl/StoreBranchServiceImpl.java:[126,54] incompatible types: java.lang.Integer cannot be converted to java.lang.Long
+[ERROR] /E:/SBA301/SBA301_BE/src/main/java/com/sba302/electroshop/service/impl/WarrantyServiceImpl.java:[41,43] incompatible types: java.lang.Integer cannot be converted to java.lang.Long
+[ERROR] /E:/SBA301/SBA301_BE/src/main/java/com/sba302/electroshop/service/impl/WarrantyServiceImpl.java:[57,74] incompatible types: java.lang.Integer cannot be converted to java.lang.Long
+[INFO] 3 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.000 s
+[INFO] Finished at: 2026-02-28T13:56:05+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project electronicsShop: Compilation failure: Compilation failure: 
+[ERROR] /E:/SBA301/SBA301_BE/src/main/java/com/sba302/electroshop/service/impl/StoreBranchServiceImpl.java:[126,54] incompatible types: java.lang.Integer cannot be converted to java.lang.Long
+[ERROR] /E:/SBA301/SBA301_BE/src/main/java/com/sba302/electroshop/service/impl/WarrantyServiceImpl.java:[41,43] incompatible types: java.lang.Integer cannot be converted to java.lang.Long
+[ERROR] /E:/SBA301/SBA301_BE/src/main/java/com/sba302/electroshop/service/impl/WarrantyServiceImpl.java:[57,74] incompatible types: java.lang.Integer cannot be converted to java.lang.Long
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

@@ -21,13 +21,13 @@ public class SupplierController {
     private final SupplierService supplierService;
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+
     public ApiResponse<SupplierResponse> getById(@PathVariable Integer id) {
         return ApiResponse.success(supplierService.getById(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+
     public ApiResponse<Page<SupplierResponse>> search(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -35,14 +35,14 @@ public class SupplierController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<SupplierResponse> create(@Valid @RequestBody CreateSupplierRequest request) {
         return ApiResponse.success(supplierService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+
     public ApiResponse<SupplierResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody CreateSupplierRequest request) {
@@ -50,7 +50,7 @@ public class SupplierController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         supplierService.delete(id);
