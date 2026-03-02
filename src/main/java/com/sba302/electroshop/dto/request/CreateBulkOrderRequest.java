@@ -11,6 +11,9 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateBulkOrderRequest {
 
+    @NotNull(message = "Company ID is required")
+    private Integer companyId;
+
     @NotEmpty(message = "Bulk order must have at least one item")
     @Valid
     private List<BulkOrderItemRequest> items;
