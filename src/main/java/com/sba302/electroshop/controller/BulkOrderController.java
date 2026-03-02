@@ -56,4 +56,9 @@ public class BulkOrderController {
             @Valid @RequestBody CreateCustomizationRequest request) {
         return ApiResponse.success(bulkOrderService.addCustomization(detailId, request));
     }
+
+    @GetMapping("/{id}/price-breakdown")
+    public ApiResponse<BulkOrderResponse> getPriceBreakdown(@PathVariable Integer id) {
+        return ApiResponse.success(bulkOrderService.getPriceBreakdown(id));
+    }
 }

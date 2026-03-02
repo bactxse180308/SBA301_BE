@@ -4,6 +4,14 @@ import com.sba302.electroshop.entity.BulkPriceTier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface BulkPriceTierRepository extends JpaRepository<BulkPriceTier, Integer> {
+
+    List<BulkPriceTier> findByBulkOrderDetail_BulkOrderDetailId(Integer detailId);
+
+    Optional<BulkPriceTier> findTopByBulkOrderDetail_BulkOrderDetailIdAndMinQtyLessThanEqualOrderByMinQtyDesc(
+            Integer detailId, Integer quantity);
 }

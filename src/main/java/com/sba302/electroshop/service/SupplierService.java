@@ -1,6 +1,7 @@
 package com.sba302.electroshop.service;
 
 import com.sba302.electroshop.dto.request.CreateSupplierRequest;
+import com.sba302.electroshop.dto.response.ProductResponse;
 import com.sba302.electroshop.dto.response.SupplierResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,4 +17,6 @@ public interface SupplierService {
     SupplierResponse update(Integer id, CreateSupplierRequest request);
 
     void delete(Integer id);
+
+    Page<ProductResponse> getProductsBySupplierId(Integer supplierId, Pageable pageable);
 }

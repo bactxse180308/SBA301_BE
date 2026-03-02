@@ -1,7 +1,5 @@
 package com.sba302.electroshop.repository;
 
-import aj.org.objectweb.asm.commons.Remapper;
-import com.sba302.electroshop.dto.response.WarrantyResponse;
 import com.sba302.electroshop.entity.Warranty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

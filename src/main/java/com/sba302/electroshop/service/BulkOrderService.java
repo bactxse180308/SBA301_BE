@@ -18,4 +18,6 @@ public interface BulkOrderService {
     BulkOrderResponse updateStatus(Integer id, BulkOrderStatus status);
 
     BulkOrderResponse addCustomization(Integer bulkOrderDetailId, CreateCustomizationRequest request);
+
+    BulkOrderResponse getPriceBreakdown(Integer bulkOrderId);
 }

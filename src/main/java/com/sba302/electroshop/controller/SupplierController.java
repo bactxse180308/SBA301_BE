@@ -2,6 +2,7 @@ package com.sba302.electroshop.controller;
 
 import com.sba302.electroshop.dto.request.CreateSupplierRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
+import com.sba302.electroshop.dto.response.ProductResponse;
 import com.sba302.electroshop.dto.response.SupplierResponse;
 import com.sba302.electroshop.service.SupplierService;
 import jakarta.validation.Valid;
@@ -55,5 +56,13 @@ public class SupplierController {
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         supplierService.delete(id);
         return ApiResponse.success(null);
+    }
+
+    @GetMapping("/{supplierId}/products")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ApiResponse<Page<ProductResponse>> getProductsBySupplierId(
+            @PathVariable Integer supplierId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.success(supplierService.getProductsBySupplierId(supplierId, pageable));
     }
 }
