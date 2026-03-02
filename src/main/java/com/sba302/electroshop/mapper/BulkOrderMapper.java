@@ -15,6 +15,8 @@ public interface BulkOrderMapper {
 
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "user.fullName", target = "userFullName")
+    @Mapping(source = "company.companyId", target = "companyId")
+    @Mapping(source = "company.companyName", target = "companyName")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "details", target = "details")
     BulkOrderResponse toResponse(BulkOrder bulkOrder);

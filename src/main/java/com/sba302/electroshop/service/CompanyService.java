@@ -1,0 +1,19 @@
+package com.sba302.electroshop.service;
+
+import com.sba302.electroshop.dto.request.CompanyRequest;
+import com.sba302.electroshop.dto.response.CompanyResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+public interface CompanyService {
+
+    CompanyResponse getById(Integer id);
+
+    Page<CompanyResponse> search(String keyword, Pageable pageable);
+
+    CompanyResponse create(CompanyRequest request);
+
+    CompanyResponse update(Integer id, CompanyRequest request);
+
+    void delete(Integer id);
+}
