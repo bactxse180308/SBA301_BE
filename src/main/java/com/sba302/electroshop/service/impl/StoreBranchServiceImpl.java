@@ -5,6 +5,8 @@ import com.sba302.electroshop.dto.response.StoreBranchResponse;
 import com.sba302.electroshop.entity.BranchProductStock;
 import com.sba302.electroshop.entity.Product;
 import com.sba302.electroshop.entity.StoreBranch;
+import com.sba302.electroshop.exception.ResourceConflictException;
+import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.StoreBranchMapper;
 import com.sba302.electroshop.repository.BranchProductStockRepository;
 import com.sba302.electroshop.repository.ProductRepository;
@@ -30,16 +32,16 @@ class StoreBranchServiceImpl implements StoreBranchService {
     private final ProductRepository productRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public StoreBranchResponse getById(Integer id) {
-        // TODO: Implement - find by id, map to response
         return storeBranchRepository.findById(id)
                 .map(storeBranchMapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Store branch not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Store branch not found with id: " + id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<StoreBranchResponse> search(String keyword, Pageable pageable) {
-        // TODO: Implement - search branches by name/location
         if (keyword == null || keyword.isBlank()) {
             return storeBranchRepository.findAll(pageable)
                     .map(storeBranchMapper::toResponse);
@@ -54,9 +56,8 @@ class StoreBranchServiceImpl implements StoreBranchService {
     @Override
     @Transactional
     public StoreBranchResponse create(CreateStoreBranchRequest request) {
-        // TODO: Implement - create store branch
         if (storeBranchRepository.existsByBranchNameIgnoreCase(request.getBranchName())) {
-            throw new RuntimeException("Branch name already exists");
+            throw new ResourceConflictException("Branch name already exists");
         }
 
         StoreBranch branch = storeBranchMapper.toEntity(request);
@@ -70,7 +71,7 @@ class StoreBranchServiceImpl implements StoreBranchService {
     public StoreBranchResponse update(Integer id, CreateStoreBranchRequest request) {
 
         StoreBranch branch = storeBranchRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Store branch not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Store branch not found with id: " + id));
 
         storeBranchMapper.updateEntity(branch, request);
         StoreBranch updated = storeBranchRepository.save(branch);
@@ -82,14 +83,14 @@ class StoreBranchServiceImpl implements StoreBranchService {
     @Override
     @Transactional
     public void delete(Integer id) {
-        // TODO: Implement - delete store branch
         if (!storeBranchRepository.existsById(id)) {
-            throw new RuntimeException("Store branch not found with id: " + id);
+            throw new ResourceNotFoundException("Store branch not found with id: " + id);
         }
         storeBranchRepository.deleteById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Integer getStockQuantity(Integer branchId, Integer productId) {
 
         if (branchId == null || productId == null) {
@@ -98,7 +99,7 @@ class StoreBranchServiceImpl implements StoreBranchService {
 
         BranchProductStock stock = branchProductStockRepository
                 .findByBranch_BranchIdAndProduct_ProductId(branchId, productId)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Stock not found for branchId=" + branchId +
                                 " and productId=" + productId
                 ));
@@ -120,12 +121,12 @@ class StoreBranchServiceImpl implements StoreBranchService {
 
         StoreBranch branch = storeBranchRepository.findById(branchId)
                 .orElseThrow(() ->
-                        new RuntimeException("Store branch not found with id: " + branchId)
+                        new ResourceNotFoundException("Store branch not found with id: " + branchId)
                 );
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() ->
-                        new RuntimeException("Product not found with id: " + productId)
+                        new ResourceNotFoundException("Product not found with id: " + productId)
                 );
 
         BranchProductStock stock = branchProductStockRepository

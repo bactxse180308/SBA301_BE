@@ -2,8 +2,9 @@ package com.sba302.electroshop.repository;
 
 import com.sba302.electroshop.entity.BulkOrder;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface BulkOrderRepository extends JpaRepository<BulkOrder, Integer> {
+public interface BulkOrderRepository extends JpaRepository<BulkOrder, Integer>, JpaSpecificationExecutor<BulkOrder> {
 }

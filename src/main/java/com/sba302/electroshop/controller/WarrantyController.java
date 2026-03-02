@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -32,12 +33,14 @@ public class WarrantyController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<WarrantyResponse> create(@Valid @RequestBody CreateWarrantyRequest request) {
         return ApiResponse.success(warrantyService.create(request));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ApiResponse<WarrantyResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody CreateWarrantyRequest request) {
@@ -45,6 +48,7 @@ public class WarrantyController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         warrantyService.delete(id);
