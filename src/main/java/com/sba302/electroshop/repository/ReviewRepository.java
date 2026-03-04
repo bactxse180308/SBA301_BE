@@ -1,9 +1,15 @@
 package com.sba302.electroshop.repository;
 
-import com.sba302.electroshop.entity.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.sba302.electroshop.entity.Review;
+
 @Repository
-public interface ReviewRepository extends JpaRepository<Review, Integer> {
+public interface ReviewRepository extends JpaRepository<Review, Integer>, JpaSpecificationExecutor<Review> {
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.product.productId = :productId")
+    Double findAverageRatingByProductId(@Param("productId") Integer productId);
 }
