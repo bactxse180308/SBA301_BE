@@ -2,7 +2,6 @@ package com.sba302.electroshop.service.impl;
 
 import com.sba302.electroshop.dto.request.CreateBulkOrderRequest;
 import com.sba302.electroshop.dto.request.CreateCustomizationRequest;
-import com.sba302.electroshop.dto.response.BulkOrderDetailResponse;
 import com.sba302.electroshop.dto.response.BulkOrderResponse;
 import com.sba302.electroshop.entity.*;
 import com.sba302.electroshop.enums.BulkOrderStatus;
@@ -11,20 +10,16 @@ import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.BulkOrderMapper;
 import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.BulkOrderService;
-import com.sba302.electroshop.specification.BulkOrderSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,88 +28,103 @@ class BulkOrderServiceImpl implements BulkOrderService {
 
     private final BulkOrderRepository bulkOrderRepository;
     private final BulkOrderDetailRepository bulkOrderDetailRepository;
-    private final BulkPriceTierRepository bulkPriceTierRepository;
     private final OrderCustomizationRepository orderCustomizationRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final CompanyRepository companyRepository;
     private final BulkOrderMapper bulkOrderMapper;
 
     @Override
-    @Transactional(readOnly = true)
     public BulkOrderResponse getById(Integer id) {
+        log.info("Fetching bulk order with id: {}", id);
         BulkOrder bulkOrder = bulkOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found with id: " + id));
-        return buildFullResponse(bulkOrder);
+        return bulkOrderMapper.toResponse(bulkOrder);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<BulkOrderResponse> search(Integer userId, BulkOrderStatus status, Pageable pageable) {
-        Specification<BulkOrder> spec = BulkOrderSpecification.filterBulkOrders(userId, status);
-        return bulkOrderRepository.findAll(spec, pageable)
-                .map(this::buildFullResponse);
+        log.info("Searching bulk orders with userId: {}, status: {}", userId, status);
+        Page<BulkOrder> bulkOrders;
+
+        if (userId != null && status != null) {
+            bulkOrders = bulkOrderRepository.findByUserUserIdAndStatus(userId, status, pageable);
+        } else if (userId != null) {
+            bulkOrders = bulkOrderRepository.findByUserUserId(userId, pageable);
+        } else if (status != null) {
+            bulkOrders = bulkOrderRepository.findByStatus(status, pageable);
+        } else {
+            bulkOrders = bulkOrderRepository.findAll(pageable);
+        }
+
+        return bulkOrders.map(bulkOrderMapper::toResponse);
     }
 
     @Override
     @Transactional
     public BulkOrderResponse create(Integer userId, CreateBulkOrderRequest request) {
+        log.info("Creating bulk order for user: {}, company: {}", userId, request.getCompanyId());
+
+        // Validate user exists
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
+        // Validate company exists
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
+
+        // Create bulk order
         BulkOrder bulkOrder = BulkOrder.builder()
                 .user(user)
+                .company(company)
                 .createdAt(LocalDateTime.now())
                 .status(BulkOrderStatus.PENDING)
-                .totalPrice(BigDecimal.ZERO)
                 .build();
 
-        BulkOrder savedOrder = bulkOrderRepository.save(bulkOrder);
+        BulkOrder savedBulkOrder = bulkOrderRepository.save(bulkOrder);
 
-        List<BulkOrderDetail> details = new ArrayList<>();
-        BigDecimal totalPrice = BigDecimal.ZERO;
+        // Create bulk order details
+        List<BulkOrderDetail> details = request.getItems().stream()
+                .map(item -> {
+                    Product product = productRepository.findById(item.getProductId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + item.getProductId()));
 
-        for (CreateBulkOrderRequest.BulkOrderItemRequest item : request.getItems()) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + item.getProductId()));
+                    return BulkOrderDetail.builder()
+                            .bulkOrder(savedBulkOrder)
+                            .product(product)
+                            .quantity(item.getQuantity())
+                            .unitPriceSnapshot(product.getPrice())
+                            .discountSnapshot(BigDecimal.ZERO)
+                            .build();
+                })
+                .toList();
 
-            BigDecimal unitPrice = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+        bulkOrderDetailRepository.saveAll(details);
 
-            BulkOrderDetail detail = BulkOrderDetail.builder()
-                    .bulkOrder(savedOrder)
-                    .product(product)
-                    .quantity(item.getQuantity())
-                    .unitPriceSnapshot(unitPrice)
-                    .discountSnapshot(BigDecimal.ZERO)
-                    .build();
-
-            BulkOrderDetail savedDetail = bulkOrderDetailRepository.save(detail);
-            details.add(savedDetail);
-
-            BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
-            totalPrice = totalPrice.add(lineTotal);
-        }
-
-        savedOrder.setDetails(details);
-        savedOrder.setTotalPrice(totalPrice);
-        bulkOrderRepository.save(savedOrder);
-
-        return buildFullResponse(savedOrder);
+        log.info("Bulk order created successfully with id: {}", savedBulkOrder.getBulkOrderId());
+        return bulkOrderMapper.toResponse(savedBulkOrder);
     }
 
     @Override
     @Transactional
     public BulkOrderResponse updateStatus(Integer id, BulkOrderStatus status) {
+        log.info("Updating bulk order status with id: {}, new status: {}", id, status);
+
         BulkOrder bulkOrder = bulkOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found with id: " + id));
 
         bulkOrder.setStatus(status);
-        BulkOrder updated = bulkOrderRepository.save(bulkOrder);
-        return buildFullResponse(updated);
+        BulkOrder updatedBulkOrder = bulkOrderRepository.save(bulkOrder);
+
+        log.info("Bulk order status updated successfully");
+        return bulkOrderMapper.toResponse(updatedBulkOrder);
     }
 
     @Override
     @Transactional
     public BulkOrderResponse addCustomization(Integer bulkOrderDetailId, CreateCustomizationRequest request) {
+        log.info("Adding customization to bulk order detail: {}", bulkOrderDetailId);
+
         BulkOrderDetail detail = bulkOrderDetailRepository.findById(bulkOrderDetailId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bulk order detail not found with id: " + bulkOrderDetailId));
 
@@ -122,103 +132,23 @@ class BulkOrderServiceImpl implements BulkOrderService {
                 .bulkOrderDetail(detail)
                 .type(request.getType())
                 .note(request.getNote())
+                .extraFee(request.getExtraFee())
                 .status(CustomizationStatus.PENDING)
-                .extraFee(request.getExtraFee() != null ? request.getExtraFee() : BigDecimal.ZERO)
                 .build();
 
         orderCustomizationRepository.save(customization);
 
-        // Recalculate total price for the parent bulk order
-        BulkOrder bulkOrder = detail.getBulkOrder();
-        recalculateTotalPrice(bulkOrder);
-        bulkOrderRepository.save(bulkOrder);
-
-        return buildFullResponse(bulkOrder);
+        log.info("Customization added successfully");
+        return bulkOrderMapper.toResponse(detail.getBulkOrder());
     }
 
     @Override
-    @Transactional(readOnly = true)
     public BulkOrderResponse getPriceBreakdown(Integer bulkOrderId) {
+        log.info("Getting price breakdown for bulk order: {}", bulkOrderId);
+
         BulkOrder bulkOrder = bulkOrderRepository.findById(bulkOrderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found with id: " + bulkOrderId));
-        return buildFullResponse(bulkOrder);
-    }
 
-    // ======================== HELPER METHODS ========================
-
-    private BulkOrderResponse buildFullResponse(BulkOrder bulkOrder) {
-        BulkOrderResponse response = bulkOrderMapper.toResponse(bulkOrder);
-
-        List<BulkOrderDetail> details = bulkOrder.getDetails();
-        if (details == null || details.isEmpty()) {
-            details = bulkOrderDetailRepository.findByBulkOrder_BulkOrderId(bulkOrder.getBulkOrderId());
-        }
-
-        List<BulkOrderDetailResponse> detailResponses = new ArrayList<>();
-        BigDecimal totalPrice = BigDecimal.ZERO;
-
-        for (BulkOrderDetail detail : details) {
-            BulkOrderDetailResponse detailResponse = bulkOrderMapper.toDetailResponse(detail);
-
-            // 1. Lookup applied tier price
-            BigDecimal appliedTierPrice = lookupTierPrice(detail);
-            detailResponse.setAppliedTierPrice(appliedTierPrice);
-
-            // 2. Calculate customization fee
-            BigDecimal customizationFee = calculateCustomizationFee(detail);
-            detailResponse.setCustomizationFee(customizationFee);
-
-            // 3. Calculate line total = quantity × appliedTierPrice + customizationFee
-            BigDecimal lineTotal = appliedTierPrice
-                    .multiply(BigDecimal.valueOf(detail.getQuantity()))
-                    .add(customizationFee);
-            detailResponse.setLineTotal(lineTotal);
-
-            totalPrice = totalPrice.add(lineTotal);
-            detailResponses.add(detailResponse);
-        }
-
-        response.setDetails(detailResponses);
-        response.setTotalPrice(totalPrice);
-        return response;
-    }
-
-    private BigDecimal lookupTierPrice(BulkOrderDetail detail) {
-        Optional<BulkPriceTier> matchedTier = bulkPriceTierRepository
-                .findTopByBulkOrderDetail_BulkOrderDetailIdAndMinQtyLessThanEqualOrderByMinQtyDesc(
-                        detail.getBulkOrderDetailId(), detail.getQuantity());
-
-        return matchedTier.map(BulkPriceTier::getUnitPrice)
-                .orElse(detail.getUnitPriceSnapshot() != null ? detail.getUnitPriceSnapshot() : BigDecimal.ZERO);
-    }
-
-    private BigDecimal calculateCustomizationFee(BulkOrderDetail detail) {
-        List<OrderCustomization> customizations = detail.getCustomizations();
-        if (customizations == null || customizations.isEmpty()) {
-            customizations = orderCustomizationRepository
-                    .findByBulkOrderDetail_BulkOrderDetailId(detail.getBulkOrderDetailId());
-        }
-
-        return customizations.stream()
-                .filter(c -> c.getExtraFee() != null)
-                .map(OrderCustomization::getExtraFee)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private void recalculateTotalPrice(BulkOrder bulkOrder) {
-        List<BulkOrderDetail> details = bulkOrderDetailRepository
-                .findByBulkOrder_BulkOrderId(bulkOrder.getBulkOrderId());
-
-        BigDecimal totalPrice = BigDecimal.ZERO;
-        for (BulkOrderDetail detail : details) {
-            BigDecimal appliedTierPrice = lookupTierPrice(detail);
-            BigDecimal customizationFee = calculateCustomizationFee(detail);
-            BigDecimal lineTotal = appliedTierPrice
-                    .multiply(BigDecimal.valueOf(detail.getQuantity()))
-                    .add(customizationFee);
-            totalPrice = totalPrice.add(lineTotal);
-        }
-
-        bulkOrder.setTotalPrice(totalPrice);
+        return bulkOrderMapper.toResponse(bulkOrder);
     }
 }
