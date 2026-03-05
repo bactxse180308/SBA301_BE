@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  # ─── Prometheus tự monitor chính nó ──────────────────────
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ─── ElectroShop Spring Boot App ─────────────────────────
+  - job_name: "electroshop"
+    metrics_path: "/actuator/prometheus"
+    scrape_interval: 10s
+    # honor_labels: true → ưu tiên label từ Spring Boot metric,
+    # tránh Prometheus đổi tên thành exported_application
+    honor_labels: true
+    static_configs:
+      - targets: ["192.168.20.29:8080"]

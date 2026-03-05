@@ -37,7 +37,8 @@ public class SecurityConfig {
                                 "/api/v1/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui.html")
+                                "/swagger-ui.html",
+                                "/actuator/**")       // Prometheus scrape endpoint
                         .permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
