@@ -3,6 +3,8 @@ package com.sba302.electroshop.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "BULK_ORDER_DETAILS")
@@ -34,4 +36,12 @@ public class BulkOrderDetail {
 
     @Column(name = "discount_snapshot")
     private BigDecimal discountSnapshot;
+
+    @OneToMany(mappedBy = "bulkOrderDetail", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<BulkPriceTier> priceTiers = new ArrayList<>();
+
+    @OneToMany(mappedBy = "bulkOrderDetail", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<OrderCustomization> customizations = new ArrayList<>();
 }

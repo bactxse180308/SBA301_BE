@@ -4,6 +4,7 @@ import com.sba302.electroshop.dto.request.CreateWarrantyRequest;
 import com.sba302.electroshop.dto.response.WarrantyResponse;
 import com.sba302.electroshop.entity.Product;
 import com.sba302.electroshop.entity.Warranty;
+import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.WarrantyMapper;
 import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.repository.WarrantyRepository;
@@ -28,18 +29,18 @@ import java.time.LocalDateTime;
     private final WarrantyMapper warrantyMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public WarrantyResponse getById(Integer id) {
-        // TODO: Implement - find by id, map to response
-
         return warrantyRepository.findById(id)
                 .map(warrantyMapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Warranty not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Warranty not found with id: " + id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<WarrantyResponse> getByProduct(Integer productId, Pageable pageable) {
         if (!productRepository.existsById(productId)) {
-            throw new RuntimeException("Product not found with id: " + productId);
+            throw new ResourceNotFoundException("Product not found with id: " + productId);
         }
 
 
@@ -56,7 +57,7 @@ import java.time.LocalDateTime;
 
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() ->
-                        new RuntimeException("Product not found with id: " + request.getProductId())
+                        new ResourceNotFoundException("Product not found with id: " + request.getProductId())
                 );
 
         Warranty warranty = warrantyMapper.toEntity(request);
@@ -83,7 +84,7 @@ import java.time.LocalDateTime;
 
         Warranty warranty = warrantyRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Warranty not found with id: " + id)
+                        new ResourceNotFoundException("Warranty not found with id: " + id)
                 );
 
         // update các field thường (có thể bao gồm startDate)
@@ -110,19 +111,18 @@ import java.time.LocalDateTime;
     @Override
     @Transactional
     public void delete(Integer id) {
-        // TODO: Implement - delete warranty
         if (!warrantyRepository.existsById(id)) {
-            throw new RuntimeException("Warranty not found with id: " + id);
+            throw new ResourceNotFoundException("Warranty not found with id: " + id);
         }
         warrantyRepository.deleteById(id);
 
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isWarrantyValid(Integer warrantyId) {
-
         Warranty warranty = warrantyRepository.findById(warrantyId)
-                .orElseThrow(() -> new RuntimeException("Warranty not found with id: " + warrantyId));
+                .orElseThrow(() -> new ResourceNotFoundException("Warranty not found with id: " + warrantyId));
 
         return warranty.getEndDate() != null
                 && warranty.getEndDate().isAfter(LocalDateTime.now());

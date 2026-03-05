@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -32,12 +33,14 @@ public class StoreBranchController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<StoreBranchResponse> create(@Valid @RequestBody CreateStoreBranchRequest request) {
         return ApiResponse.success(storeBranchService.create(request));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ApiResponse<StoreBranchResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody CreateStoreBranchRequest request) {
@@ -45,6 +48,7 @@ public class StoreBranchController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         storeBranchService.delete(id);
@@ -59,6 +63,7 @@ public class StoreBranchController {
     }
 
     @PatchMapping("/{branchId}/products/{productId}/stock")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ApiResponse<Void> updateStock(
             @PathVariable Integer branchId,
             @PathVariable Integer productId,
