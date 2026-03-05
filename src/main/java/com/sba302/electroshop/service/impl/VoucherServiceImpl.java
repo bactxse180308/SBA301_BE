@@ -3,6 +3,11 @@ package com.sba302.electroshop.service.impl;
 import com.sba302.electroshop.dto.request.CreateVoucherRequest;
 import com.sba302.electroshop.dto.request.UpdateVoucherRequest;
 import com.sba302.electroshop.dto.response.VoucherResponse;
+import com.sba302.electroshop.entity.User;
+import com.sba302.electroshop.entity.UserVoucher;
+import com.sba302.electroshop.entity.Voucher;
+import com.sba302.electroshop.enums.VoucherStatus;
+import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.VoucherMapper;
 import com.sba302.electroshop.repository.UserVoucherRepository;
 import com.sba302.electroshop.repository.VoucherRepository;
@@ -13,6 +18,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -25,51 +32,96 @@ class VoucherServiceImpl implements VoucherService {
 
     @Override
     public VoucherResponse getById(Integer id) {
-        // TODO: Implement - find by id, map to response
-        return null;
+
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Voucher not found"));
+
+        return voucherMapper.toResponse(voucher);
     }
 
     @Override
     public VoucherResponse getByCode(String code) {
-        // TODO: Implement - find by voucher code
-        return null;
+
+        Voucher voucher = voucherRepository
+                .findByVoucherCode(code)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Voucher not found"));
+
+        return voucherMapper.toResponse(voucher);
     }
 
     @Override
     public Page<VoucherResponse> search(String keyword, Boolean validOnly, Pageable pageable) {
-        // TODO: Implement - search vouchers with optional filters
-        return null;
+
+        Page<Voucher> page = voucherRepository.findAll(pageable);
+
+        return page.map(voucherMapper::toResponse);
     }
 
     @Override
     @Transactional
     public VoucherResponse create(CreateVoucherRequest request) {
-        // TODO: Implement - create new voucher
-        return null;
+
+        Voucher voucher = voucherMapper.toEntity(request);
+
+        voucherRepository.save(voucher);
+
+        return voucherMapper.toResponse(voucher);
     }
 
     @Override
     @Transactional
     public VoucherResponse update(Integer id, UpdateVoucherRequest request) {
-        // TODO: Implement - update voucher
-        return null;
+
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Voucher not found"));
+
+        voucherMapper.updateEntity(voucher, request);
+
+        voucherRepository.save(voucher);
+
+        return voucherMapper.toResponse(voucher);
     }
 
     @Override
     @Transactional
     public void assignToUser(Integer voucherId, Integer userId) {
-        // TODO: Implement - assign voucher to user
+
+        UserVoucher uv = new UserVoucher();
+
+        uv.setVoucher(voucherRepository.findById(voucherId).orElseThrow());
+
+        User user = new User();
+        user.setUserId(userId);
+
+        uv.setUser(user);
+        uv.setStatus(VoucherStatus.AVAILABLE);
+        uv.setAssignedAt(LocalDateTime.now());
+
+        userVoucherRepository.save(uv);
     }
 
     @Override
     public boolean validateVoucher(String code, Integer userId) {
-        // TODO: Implement - check if voucher is valid for user
-        return false;
+
+        Voucher voucher = voucherRepository
+                .findByVoucherCode(code)
+                .orElse(null);
+
+        if (voucher == null) return false;
+
+        LocalDateTime now = LocalDateTime.now();
+
+        return now.isAfter(voucher.getValidFrom())
+                && now.isBefore(voucher.getValidTo());
     }
 
     @Override
     @Transactional
     public void delete(Integer id) {
-        // TODO: Implement - delete voucher
+
+        voucherRepository.deleteById(id);
     }
 }
