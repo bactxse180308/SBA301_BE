@@ -18,11 +18,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 class SupplierServiceImpl implements SupplierService {
 
     private final SupplierRepository supplierRepository;
@@ -33,6 +32,7 @@ class SupplierServiceImpl implements SupplierService {
     @Override
     @Transactional(readOnly = true)
     public SupplierResponse getById(Integer id) {
+        log.info("Fetching supplier with id={}", id);
         return supplierRepository.findById(id)
                 .map(supplierMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + id));
@@ -41,50 +41,62 @@ class SupplierServiceImpl implements SupplierService {
     @Override
     @Transactional(readOnly = true)
     public Page<SupplierResponse> search(String keyword, Pageable pageable) {
-
+        log.info("Searching suppliers with keyword={}", keyword);
         if (keyword == null || keyword.isBlank()) {
             return supplierRepository.findAll(pageable)
                     .map(supplierMapper::toResponse);
         }
 
         return supplierRepository
-                .findSupplierBySupplierNameContainingIgnoreCase(keyword, pageable)
+                .findSupplierBySupplierNameContainingIgnoreCase(keyword.trim(), pageable)
                 .map(supplierMapper::toResponse);
     }
-
 
     @Override
     @Transactional
     public SupplierResponse create(CreateSupplierRequest request) {
-        if (supplierRepository.existsBySupplierNameIgnoreCase(request.getSupplierName())) {
-            throw new ResourceConflictException("Supplier name already exists");
+        String name = request.getSupplierName().trim();
+        log.info("Checking existence of supplier name: '{}'", name);
+
+        if (supplierRepository.existsBySupplierNameIgnoreCase(name)) {
+            log.warn("Supplier name already exists: '{}'", name);
+            throw new ResourceConflictException("Supplier name already exists: " + name);
         }
 
         Supplier supplier = supplierMapper.toEntity(request);
+        supplier.setSupplierName(name);
         Supplier saved = supplierRepository.save(supplier);
+        log.info("Successfully created supplier: '{}' with id={}", name, saved.getSupplierId());
 
         return supplierMapper.toResponse(saved);
     }
 
-
-
     @Override
     @Transactional
     public SupplierResponse update(Integer id, CreateSupplierRequest request) {
+        String name = request.getSupplierName().trim();
+        log.info("Updating supplier id={}, new name check: '{}'", id, name);
+
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + id));
 
-        supplierMapper.updateEntity(supplier, request);
+        if (supplierRepository.existsBySupplierNameIgnoreCaseAndSupplierIdNot(name, id)) {
+            log.warn("Supplier name already exists (other record): '{}'", name);
+            throw new ResourceConflictException("Supplier name already exists: " + name);
+        }
 
+        supplierMapper.updateEntity(supplier, request);
+        supplier.setSupplierName(name);
+        
         Supplier updated = supplierRepository.save(supplier);
+        log.info("Successfully updated supplier id={}", id);
         return supplierMapper.toResponse(updated);
     }
-
-
 
     @Override
     @Transactional
     public void delete(Integer id) {
+        log.info("Deleting supplier id={}", id);
         if (!supplierRepository.existsById(id)) {
             throw new ResourceNotFoundException("Supplier not found with id: " + id);
         }

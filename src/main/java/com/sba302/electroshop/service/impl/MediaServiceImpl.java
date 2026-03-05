@@ -2,6 +2,9 @@ package com.sba302.electroshop.service.impl;
 
 import com.sba302.electroshop.dto.request.CreateMediaRequest;
 import com.sba302.electroshop.dto.response.MediaResponse;
+import com.sba302.electroshop.entity.Media;
+import com.sba302.electroshop.entity.Product;
+import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.MediaMapper;
 import com.sba302.electroshop.repository.MediaRepository;
 import com.sba302.electroshop.repository.ProductRepository;
@@ -12,10 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 class MediaServiceImpl implements MediaService {
 
     private final MediaRepository mediaRepository;
@@ -24,39 +29,72 @@ class MediaServiceImpl implements MediaService {
 
     @Override
     public MediaResponse getById(Integer id) {
-        // TODO: Implement - find by id, map to response
-        return null;
+        log.info("Fetching media with id={}", id);
+        return mediaRepository.findById(id)
+                .map(mediaMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found with id: " + id));
     }
 
     @Override
     public List<MediaResponse> getByProduct(Integer productId) {
-        // TODO: Implement - get all media for product
-        return null;
+        log.info("Fetching media for product id={}", productId);
+        return mediaRepository.findByProduct_ProductIdOrderBySortOrderAsc(productId).stream()
+                .map(mediaMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public MediaResponse create(CreateMediaRequest request) {
-        // TODO: Implement - create media
-        return null;
+        log.info("Creating media for product id={}", request.getProductId());
+        
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + request.getProductId()));
+
+        Media media = mediaMapper.toEntity(request);
+        media.setProduct(product);
+        
+        media = mediaRepository.save(media);
+        return mediaMapper.toResponse(media);
     }
 
     @Override
     @Transactional
     public MediaResponse update(Integer id, CreateMediaRequest request) {
-        // TODO: Implement - update media
-        return null;
+        log.info("Updating media id={}", id);
+        
+        Media media = mediaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found with id: " + id));
+
+        mediaMapper.updateEntity(media, request);
+        
+        if (!media.getProduct().getProductId().equals(request.getProductId())) {
+            Product product = productRepository.findById(request.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + request.getProductId()));
+            media.setProduct(product);
+        }
+
+        media = mediaRepository.save(media);
+        return mediaMapper.toResponse(media);
     }
 
     @Override
     @Transactional
     public void delete(Integer id) {
-        // TODO: Implement - delete media
+        log.info("Deleting media id={}", id);
+        if (!mediaRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Media not found with id: " + id);
+        }
+        mediaRepository.deleteById(id);
     }
 
     @Override
     @Transactional
     public void updateSortOrder(Integer id, Integer sortOrder) {
-        // TODO: Implement - update media sort order
+        log.info("Updating sort order for media id={}", id);
+        Media media = mediaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found with id: " + id));
+        media.setSortOrder(sortOrder);
+        mediaRepository.save(media);
     }
 }

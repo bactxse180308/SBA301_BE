@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ProductAttributeRepository extends JpaRepository<ProductAttribute, Integer> {
-
+    List<ProductAttribute> findByProduct_ProductId(Integer productId);
 }
