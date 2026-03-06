@@ -7,6 +7,7 @@ import com.sba302.electroshop.dto.response.BulkOrderResponse;
 import com.sba302.electroshop.entity.*;
 import com.sba302.electroshop.enums.BulkOrderStatus;
 import com.sba302.electroshop.enums.CustomizationStatus;
+import com.sba302.electroshop.enums.VoucherStatus;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.BulkOrderMapper;
 import com.sba302.electroshop.repository.*;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +38,10 @@ class BulkOrderServiceImpl implements BulkOrderService {
     private final BulkPriceTierRepository bulkPriceTierRepository;
     private final OrderCustomizationRepository orderCustomizationRepository;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final ProductRepository productRepository;
+    private final VoucherRepository voucherRepository;
+    private final UserVoucherRepository userVoucherRepository;
     private final BulkOrderMapper bulkOrderMapper;
 
     @Override
@@ -49,8 +54,11 @@ class BulkOrderServiceImpl implements BulkOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BulkOrderResponse> search(Integer userId, BulkOrderStatus status, Pageable pageable) {
-        Specification<BulkOrder> spec = BulkOrderSpecification.filterBulkOrders(userId, status);
+    public Page<BulkOrderResponse> search(Integer userId, Integer companyId, BulkOrderStatus status,
+                                          LocalDateTime createdAtFrom, LocalDateTime createdAtTo,
+                                          Pageable pageable) {
+        Specification<BulkOrder> spec = BulkOrderSpecification.filterBulkOrders(
+                userId, companyId, status, createdAtFrom, createdAtTo);
         return bulkOrderRepository.findAll(spec, pageable)
                 .map(this::buildFullResponse);
     }
@@ -58,20 +66,28 @@ class BulkOrderServiceImpl implements BulkOrderService {
     @Override
     @Transactional
     public BulkOrderResponse create(Integer userId, CreateBulkOrderRequest request) {
+        // BƯỚC 1: Validate User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        BulkOrder bulkOrder = BulkOrder.builder()
+        // BƯỚC 2: Validate Company
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
+
+        // BƯỚC 3: Tạo BulkOrder và save ngay
+        BulkOrder savedOrder = BulkOrder.builder()
                 .user(user)
+                .company(company)
                 .createdAt(LocalDateTime.now())
                 .status(BulkOrderStatus.PENDING)
                 .totalPrice(BigDecimal.ZERO)
+                .finalPrice(BigDecimal.ZERO)
+                .discountApplied(false)
                 .build();
+        savedOrder = bulkOrderRepository.save(savedOrder);
 
-        BulkOrder savedOrder = bulkOrderRepository.save(bulkOrder);
-
-        List<BulkOrderDetail> details = new ArrayList<>();
-        BigDecimal totalPrice = BigDecimal.ZERO;
+        // BƯỚC 4: Duyệt từng item, tạo detail, tính subtotal
+        BigDecimal subtotal = BigDecimal.ZERO;
 
         for (CreateBulkOrderRequest.BulkOrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId())
@@ -88,17 +104,78 @@ class BulkOrderServiceImpl implements BulkOrderService {
                     .build();
 
             BulkOrderDetail savedDetail = bulkOrderDetailRepository.save(detail);
-            details.add(savedDetail);
 
-            BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
-            totalPrice = totalPrice.add(lineTotal);
+            // Tính giá theo BulkPriceTier (nếu có), nếu không dùng unitPrice
+            BigDecimal tierPrice = lookupTierPrice(savedDetail);
+            BigDecimal lineTotal = tierPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+            subtotal = subtotal.add(lineTotal);
         }
 
-        savedOrder.setDetails(details);
-        savedOrder.setTotalPrice(totalPrice);
+        // BƯỚC 5: Áp dụng Voucher nếu có
+        String voucherCode = request.getVoucherCode();
+        if (voucherCode != null && !voucherCode.isBlank()) {
+            // 5.1 Tìm voucher theo code
+            Voucher voucher = voucherRepository.findByVoucherCode(voucherCode)
+                    .orElseThrow(() -> new ResourceNotFoundException("Voucher không hợp lệ: " + voucherCode));
+
+            // 5.2 Validate thời hạn
+            LocalDateTime now = LocalDateTime.now();
+            if (voucher.getValidFrom() != null && now.isBefore(voucher.getValidFrom())) {
+                throw new IllegalArgumentException("Voucher chưa có hiệu lực");
+            }
+            if (voucher.getValidTo() != null && now.isAfter(voucher.getValidTo())) {
+                throw new IllegalArgumentException("Voucher đã hết hạn");
+            }
+
+            // 5.3 Validate UserVoucher
+            UserVoucher userVoucher = userVoucherRepository
+                    .findByUser_UserIdAndVoucher_VoucherCode(userId, voucherCode)
+                    .orElseThrow(() -> new ResourceNotFoundException("User không có voucher này"));
+
+            if (userVoucher.getStatus() == VoucherStatus.USED) {
+                throw new IllegalArgumentException("Voucher đã được sử dụng");
+            }
+
+            // 5.4 Tính giảm giá
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            BigDecimal discountPercentage = BigDecimal.ZERO;
+
+            if ("PERCENTAGE".equalsIgnoreCase(voucher.getDiscountType())) {
+                discountPercentage = voucher.getDiscountValue();
+                discountAmount = subtotal.multiply(discountPercentage)
+                        .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            } else if ("FIXED_AMOUNT".equalsIgnoreCase(voucher.getDiscountType())) {
+                discountAmount = voucher.getDiscountValue();
+            }
+
+            BigDecimal finalPrice = subtotal.subtract(discountAmount);
+            if (finalPrice.compareTo(BigDecimal.ZERO) < 0) finalPrice = BigDecimal.ZERO;
+
+            // 5.5 Set discount vào order
+            savedOrder.setDiscountCode(voucherCode);
+            savedOrder.setDiscountPercentage(discountPercentage);
+            savedOrder.setDiscountAmount(discountAmount);
+            savedOrder.setFinalPrice(finalPrice);
+            savedOrder.setDiscountApplied(true);
+
+            // 5.6 Đánh dấu voucher đã dùng
+            userVoucher.setStatus(VoucherStatus.USED);
+            userVoucher.setUsedAt(now);
+            userVoucherRepository.save(userVoucher);
+
+        } else {
+            savedOrder.setFinalPrice(subtotal);
+            savedOrder.setDiscountApplied(false);
+        }
+
+        // BƯỚC 6: Cập nhật totalPrice và finalPrice, KHÔNG setDetails
+        savedOrder.setTotalPrice(subtotal);
         bulkOrderRepository.save(savedOrder);
 
-        return buildFullResponse(savedOrder);
+        // BƯỚC 7: Reload từ DB để lấy đầy đủ details rồi return
+        BulkOrder reloaded = bulkOrderRepository.findById(savedOrder.getBulkOrderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found"));
+        return buildFullResponse(reloaded);
     }
 
     @Override

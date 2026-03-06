@@ -19,5 +19,10 @@ public class BulkOrderResponse {
     private LocalDateTime createdAt;
     private String status;
     private BigDecimal totalPrice;
+    private String discountCode;
+    private BigDecimal discountPercentage;
+    private BigDecimal discountAmount;
+    private BigDecimal finalPrice;
+    private Boolean discountApplied;
     private List<BulkOrderDetailResponse> details;
 }
