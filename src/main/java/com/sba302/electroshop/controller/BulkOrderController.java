@@ -11,8 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/bulk-orders")
@@ -29,9 +32,12 @@ public class BulkOrderController {
     @GetMapping
     public ApiResponse<Page<BulkOrderResponse>> search(
             @RequestParam(required = false) Integer userId,
+            @RequestParam(required = false) Integer companyId,
             @RequestParam(required = false) BulkOrderStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdAtFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdAtTo,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.success(bulkOrderService.search(userId, status, pageable));
+        return ApiResponse.success(bulkOrderService.search(userId, companyId, status, createdAtFrom, createdAtTo, pageable));
     }
 
     @PostMapping
