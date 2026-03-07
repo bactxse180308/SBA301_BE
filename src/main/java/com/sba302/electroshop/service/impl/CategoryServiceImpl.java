@@ -32,6 +32,13 @@ class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    public Page<CategoryResponse> getAll(Pageable pageable) {
+        log.info("Fetching all categories");
+        return categoryRepository.findAll(pageable)
+                .map(categoryMapper::toResponse);
+    }
+
+    @Override
     public Page<CategoryResponse> search(String keyword, Pageable pageable) {
         log.info("Searching categories with keyword={}", keyword);
         return categoryRepository.findByCategoryNameContainingIgnoreCase(keyword, pageable)

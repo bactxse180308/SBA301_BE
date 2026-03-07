@@ -25,10 +25,9 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ApiResponse<Page<CategoryResponse>> search(
-            @RequestParam(required = false) String keyword,
+    public ApiResponse<Page<CategoryResponse>> getAll(
             @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.success(categoryService.search(keyword, pageable));
+        return ApiResponse.success(categoryService.getAll(pageable));
     }
 
     @PostMapping

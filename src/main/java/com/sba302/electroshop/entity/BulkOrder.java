@@ -26,6 +26,10 @@ public class BulkOrder {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -35,6 +39,22 @@ public class BulkOrder {
 
     @Column(name = "total_price")
     private BigDecimal totalPrice;
+
+    @Column(name = "discount_code", length = 50)
+    private String discountCode;
+
+    @Column(name = "discount_percentage", precision = 5, scale = 2)
+    private BigDecimal discountPercentage;
+
+    @Column(name = "discount_amount", precision = 19, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(name = "final_price", precision = 19, scale = 2)
+    private BigDecimal finalPrice;
+
+    @Column(name = "discount_applied")
+    @Builder.Default
+    private Boolean discountApplied = false;
 
     @OneToMany(mappedBy = "bulkOrder", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

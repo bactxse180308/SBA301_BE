@@ -8,4 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface UserVoucherRepository extends JpaRepository<UserVoucher, Integer> {
+    Optional<UserVoucher> findByUser_UserIdAndVoucher_VoucherCode(Integer userId, String voucherCode);
 }

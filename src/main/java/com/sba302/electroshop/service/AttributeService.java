@@ -8,6 +8,8 @@ public interface AttributeService {
 
     AttributeResponse getById(Integer id);
 
+    Page<AttributeResponse> getAll(Pageable pageable);
+
     Page<AttributeResponse> search(String keyword, Pageable pageable);
 
     AttributeResponse create(String attributeName);

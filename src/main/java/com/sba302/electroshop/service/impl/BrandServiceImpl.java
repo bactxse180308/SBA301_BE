@@ -32,6 +32,13 @@ class BrandServiceImpl implements BrandService {
     }
 
     @Override
+    public Page<BrandResponse> getAll(Pageable pageable) {
+        log.info("Fetching all brands");
+        return brandRepository.findAll(pageable)
+                .map(brandMapper::toResponse);
+    }
+
+    @Override
     public Page<BrandResponse> search(String keyword, Pageable pageable) {
         log.info("Searching brands with keyword={}", keyword);
         return brandRepository.findByBrandNameContainingIgnoreCase(keyword, pageable)

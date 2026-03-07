@@ -22,6 +22,7 @@ public class CreateOrderRequest {
     private String voucherCode;
 
     @NotEmpty(message = "Order must have at least one item")
+    @Size(max = 50, message = "Order must not exceed 50 items")
     @Valid
     private List<OrderItemRequest> items;
 
@@ -36,6 +37,7 @@ public class CreateOrderRequest {
 
         @NotNull(message = "Quantity is required")
         @Min(value = 1, message = "Quantity must be at least 1")
+        @Max(value = 9999, message = "Quantity must not exceed 9999")
         private Integer quantity;
 
         private Integer branchId;

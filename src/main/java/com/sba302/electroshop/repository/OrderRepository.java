@@ -14,4 +14,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "WHERE o.user.userId = :userId AND od.product.productId = :productId " +
            "AND o.orderStatus = 'DELIVERED'")
     boolean hasUserPurchasedProduct(@Param("userId") Integer userId, @Param("productId") Integer productId);
+
+    long countByVoucher_VoucherId(Integer voucherId);
 }

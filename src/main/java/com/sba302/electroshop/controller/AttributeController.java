@@ -23,10 +23,9 @@ public class AttributeController {
     }
 
     @GetMapping
-    public ApiResponse<Page<AttributeResponse>> search(
-            @RequestParam(required = false) String keyword,
+    public ApiResponse<Page<AttributeResponse>> getAll(
             @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.success(attributeService.search(keyword, pageable));
+        return ApiResponse.success(attributeService.getAll(pageable));
     }
 
     @PostMapping
