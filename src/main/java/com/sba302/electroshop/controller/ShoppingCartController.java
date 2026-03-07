@@ -7,6 +7,7 @@ import com.sba302.electroshop.service.ShoppingCartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,11 +18,13 @@ public class ShoppingCartController {
     private final ShoppingCartService shoppingCartService;
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasAuthority('ADMIN') or authentication.principal.toString() == #userId.toString()")
     public ApiResponse<CartResponse> getByUser(@PathVariable Integer userId) {
         return ApiResponse.success(shoppingCartService.getByUser(userId));
     }
 
     @PostMapping("/{userId}/items")
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CartResponse> addItem(
             @PathVariable Integer userId,
@@ -30,6 +33,7 @@ public class ShoppingCartController {
     }
 
     @PatchMapping("/{userId}/items/{productId}")
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     public ApiResponse<CartResponse> updateItemQuantity(
             @PathVariable Integer userId,
             @PathVariable Integer productId,
@@ -38,6 +42,7 @@ public class ShoppingCartController {
     }
 
     @DeleteMapping("/{userId}/items/{productId}")
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> removeItem(
             @PathVariable Integer userId,
@@ -47,6 +52,7 @@ public class ShoppingCartController {
     }
 
     @DeleteMapping("/{userId}")
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> clearCart(@PathVariable Integer userId) {
         shoppingCartService.clearCart(userId);
