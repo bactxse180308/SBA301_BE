@@ -16,4 +16,21 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     boolean hasUserPurchasedProduct(@Param("userId") Integer userId, @Param("productId") Integer productId);
 
     long countByVoucher_VoucherId(Integer voucherId);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.orderDate >= :startOfDay AND o.orderDate < :endOfDay")
+    Integer countOrdersByDateRange(@Param("startOfDay") java.time.LocalDateTime startOfDay, @Param("endOfDay") java.time.LocalDateTime endOfDay);
+
+    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderDate >= :startOfDay AND o.orderDate < :endOfDay AND o.orderStatus = 'DELIVERED'")
+    java.math.BigDecimal sumRevenueByDateRange(@Param("startOfDay") java.time.LocalDateTime startOfDay, @Param("endOfDay") java.time.LocalDateTime endOfDay);
+
+    @Query("SELECT new com.sba302.electroshop.dto.response.OrderStatusStatResponse(CAST(o.orderStatus AS string), COUNT(o)) " +
+           "FROM Order o " +
+           "WHERE o.orderDate >= :startDate AND o.orderDate <= :endDate " +
+           "GROUP BY o.orderStatus")
+    java.util.List<com.sba302.electroshop.dto.response.OrderStatusStatResponse> countByOrderStatusAndDateRange(@Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
+
+    @Query("SELECT new com.sba302.electroshop.dto.response.RecentOrderResponse(o.orderId, CAST(o.orderId AS string), o.user.fullName, o.totalAmount, CAST(o.orderStatus AS string), o.orderDate) " +
+           "FROM Order o " +
+           "ORDER BY o.orderDate DESC")
+    java.util.List<com.sba302.electroshop.dto.response.RecentOrderResponse> findRecentOrders(org.springframework.data.domain.Pageable pageable);
 }

@@ -2,6 +2,7 @@ package com.sba302.electroshop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "PRODUCT_ATTRIBUTE")
@@ -25,6 +26,7 @@ public class ProductAttribute {
     @JoinColumn(name = "attribute_id", nullable = false)
     private Attribute attribute;
 
+    @Nationalized
     @Column(name = "value", length = 500)
     private String value;
 }

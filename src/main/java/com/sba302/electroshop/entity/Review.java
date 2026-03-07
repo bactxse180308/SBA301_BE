@@ -2,6 +2,7 @@ package com.sba302.electroshop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,6 +30,7 @@ public class Review {
     @Column(name = "rating")
     private Integer rating;
 
+    @Nationalized
     @Column(name = "comment", length = 2000)
     private String comment;
 

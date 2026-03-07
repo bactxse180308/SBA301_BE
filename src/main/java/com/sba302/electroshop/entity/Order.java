@@ -3,11 +3,15 @@ package com.sba302.electroshop.entity;
 import com.sba302.electroshop.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "\"ORDER\"") // Escaped because ORDER is a keyword
+@Table(name = "\"ORDER\"", indexes = {
+    @Index(name = "idx_order_date", columnList = "order_date"),
+    @Index(name = "idx_order_status", columnList = "order_status")
+})
 @Getter
 @Setter
 @Builder
@@ -34,6 +38,7 @@ public class Order {
     @Column(name = "order_status", length = 50)
     private OrderStatus orderStatus;
 
+    @Nationalized
     @Column(name = "shipping_address", length = 500)
     private String shippingAddress;
 

@@ -2,6 +2,7 @@ package com.sba302.electroshop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -22,6 +23,7 @@ public class Voucher {
     @Column(name = "voucher_code", nullable = false, unique = true, length = 100)
     private String voucherCode;
 
+    @Nationalized
     @Column(name = "description", length = 1000)
     private String description;
 
