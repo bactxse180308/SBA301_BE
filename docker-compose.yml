@@ -24,7 +24,7 @@ services:
     image: grafana/grafana:latest
     container_name: electroshop-grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin@123
@@ -39,9 +39,22 @@ services:
       - monitoring
     restart: unless-stopped
 
+  # ─── Redis ────────────────────────────────────────────────
+  redis:
+    image: redis:alpine
+    container_name: electroshop-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - monitoring
+    restart: unless-stopped
+
 volumes:
   prometheus_data:
   grafana_data:
+  redis_data:
 
 networks:
   monitoring:
