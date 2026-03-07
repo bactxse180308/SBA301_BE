@@ -1,12 +1,14 @@
 package com.sba302.electroshop.controller;
 
 import com.sba302.electroshop.dto.request.LoginRequest;
+import com.sba302.electroshop.dto.request.OAuth2Request;
 import com.sba302.electroshop.dto.request.RefreshTokenRequest;
 import com.sba302.electroshop.dto.request.RegisterRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
 import com.sba302.electroshop.dto.response.AuthResponse;
 import com.sba302.electroshop.dto.response.TokenResponse;
 import com.sba302.electroshop.service.AuthService;
+import com.sba302.electroshop.service.OAuth2Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,6 +23,14 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final OAuth2Service oauth2Service;
+
+    @PostMapping("/oauth2/google")
+    @Operation(summary = "Login with Google", description = "Verify Google ID Token and authenticate user")
+    public ApiResponse<AuthResponse> googleLogin(@Valid @RequestBody OAuth2Request request) {
+        AuthResponse response = oauth2Service.verifyGoogleToken(request.getToken());
+        return ApiResponse.success(response);
+    }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
