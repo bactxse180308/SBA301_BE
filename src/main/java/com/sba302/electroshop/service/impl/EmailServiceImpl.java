@@ -32,4 +32,30 @@ class EmailServiceImpl implements EmailService {
             // For now, we just log the error so the async process doesn't crash the calling thread.
         }
     }
+
+    @Override
+    @Async
+    public void sendWelcomeEmail(String toEmail, String fullName, String companyName, String rawPassword) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject("🎉 Welcome to ElectroShop - Company Account Created");
+            message.setText(
+                    "Hello " + fullName + ",\n\n" +
+                    "Your company account has been successfully created on ElectroShop.\n\n" +
+                    "📋 Account Details:\n" +
+                    "  Company : " + companyName + "\n" +
+                    "  Email   : " + toEmail + "\n" +
+                    "  Password: " + rawPassword + "\n\n" +
+                    "⚠️  Your registration is currently PENDING review by our admin team.\n" +
+                    "    You will receive another email once your account is approved.\n\n" +
+                    "Please change your password after your first login.\n\n" +
+                    "Best regards,\nElectroShop Team"
+            );
+            javaMailSender.send(message);
+            log.info("Welcome email sent to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to: {}", toEmail, e);
+        }
+    }
 }
