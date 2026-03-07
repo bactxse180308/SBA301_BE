@@ -3,6 +3,7 @@ package com.sba302.electroshop.entity;
 import com.sba302.electroshop.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -20,9 +21,11 @@ public class Product {
     @Column(name = "product_id")
     private Integer productId;
 
+    @Nationalized
     @Column(name = "product_name", nullable = false)
     private String productName;
 
+    @Nationalized
     @Column(name = "description", length = 2000)
     private String description;
 

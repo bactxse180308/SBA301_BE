@@ -10,4 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer>, JpaSpecificationExecutor<Product> {
     Page<Product> findBySupplier_SupplierId(Integer supplierId, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(p) FROM Product p WHERE p.status = 'ACTIVE'")
+    Integer countActiveProducts();
 }

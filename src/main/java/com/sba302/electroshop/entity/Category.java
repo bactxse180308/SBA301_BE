@@ -2,6 +2,7 @@ package com.sba302.electroshop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "CATEGORY")
@@ -17,9 +18,11 @@ public class Category {
     @Column(name = "category_id")
     private Integer categoryId;
 
+    @Nationalized
     @Column(name = "category_name", nullable = false, unique = true)
     private String categoryName;
 
+    @Nationalized
     @Column(name = "description", length = 1000)
     private String description;
 }

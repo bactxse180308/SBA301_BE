@@ -2,6 +2,7 @@ package com.sba302.electroshop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,6 +26,7 @@ public class Warranty {
     @Column(name = "warranty_period_months")
     private Integer warrantyPeriodMonths;
 
+    @Nationalized
     @Column(name = "warranty_terms", length = 2000)
     private String warrantyTerms;
 

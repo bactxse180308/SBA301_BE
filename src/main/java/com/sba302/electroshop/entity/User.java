@@ -3,10 +3,13 @@ package com.sba302.electroshop.entity;
 import com.sba302.electroshop.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "USERS")
+@Table(name = "USERS", indexes = {
+    @Index(name = "idx_registration_date", columnList = "registration_date")
+})
 @Getter
 @Setter
 @Builder
@@ -19,6 +22,7 @@ public class User {
     @Column(name = "user_id")
     private Integer userId;
 
+    @Nationalized
     @Column(name = "full_name")
     private String fullName;
 
@@ -31,6 +35,7 @@ public class User {
     @Column(name = "phone_number", length = 50)
     private String phoneNumber;
 
+    @Nationalized
     @Column(name = "address", length = 500)
     private String address;
 

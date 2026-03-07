@@ -12,4 +12,10 @@ import com.sba302.electroshop.entity.User;
 public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecificationExecutor<User> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM User u WHERE u.registrationDate >= :startOfDay AND u.registrationDate < :endOfDay AND u.role.roleName = 'CUSTOMER'")
+    Integer countNewCustomersByDateRange(@org.springframework.data.repository.query.Param("startOfDay") java.time.LocalDateTime startOfDay, @org.springframework.data.repository.query.Param("endOfDay") java.time.LocalDateTime endOfDay);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM User u WHERE u.role.roleName = 'CUSTOMER'")
+    Integer countTotalCustomers();
 }
