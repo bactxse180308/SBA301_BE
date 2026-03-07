@@ -14,6 +14,6 @@ import java.util.List;
 public interface MediaRepository extends JpaRepository<Media, Integer> {
     List<Media> findByProduct_ProductIdOrderBySortOrderAsc(Integer productId);
 
-    @Query("SELECT m FROM Media m WHERE m.product.productId = :productId ORDER BY m.sortOrder ASC")
+    @Query("SELECT m FROM Media m WHERE m.product.productId = :productId ORDER BY m.sortOrder ASC LIMIT 1")
     Optional<Media> findFirstByProductId(@Param("productId") Integer productId);
 }

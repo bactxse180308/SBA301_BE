@@ -21,7 +21,6 @@ import com.sba302.electroshop.repository.WishlistItemRepository;
 import com.sba302.electroshop.repository.WishlistRepository;
 import com.sba302.electroshop.service.WishlistService;
 import com.sba302.electroshop.specification.WishlistItemSpecification;
-import com.sba302.electroshop.specification.WishlistSpecification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +43,7 @@ class WishlistServiceImpl implements WishlistService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         
-        Wishlist wishlist = wishlistRepository.findOne(WishlistSpecification.hasUser(userId))
+        Wishlist wishlist = wishlistRepository.findFirstByUser_UserId(userId)
                 .orElseGet(() -> createWishlistForUser(user));
         
         List<WishlistItem> items = wishlistItemRepository.findAll(
@@ -64,7 +63,7 @@ class WishlistServiceImpl implements WishlistService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
         
-        Wishlist wishlist = wishlistRepository.findOne(WishlistSpecification.hasUser(userId))
+        Wishlist wishlist = wishlistRepository.findFirstByUser_UserId(userId)
                 .orElseGet(() -> createWishlistForUser(user));
         
         // Check if product already in wishlist
@@ -94,7 +93,7 @@ class WishlistServiceImpl implements WishlistService {
     public void removeItem(Integer userId, Integer productId) {
         log.info("Removing product {} from wishlist for user: {}", productId, userId);
         
-        Wishlist wishlist = wishlistRepository.findOne(WishlistSpecification.hasUser(userId))
+        Wishlist wishlist = wishlistRepository.findFirstByUser_UserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wishlist not found for user: " + userId));
         
         WishlistItem item = wishlistItemRepository.findOne(
@@ -109,7 +108,7 @@ class WishlistServiceImpl implements WishlistService {
     public void clearWishlist(Integer userId) {
         log.info("Clearing wishlist for user: {}", userId);
         
-        Wishlist wishlist = wishlistRepository.findOne(WishlistSpecification.hasUser(userId))
+        Wishlist wishlist = wishlistRepository.findFirstByUser_UserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wishlist not found for user: " + userId));
         
         wishlistItemRepository.deleteByWishlistId(wishlist.getWishlistId());
@@ -119,7 +118,7 @@ class WishlistServiceImpl implements WishlistService {
     public boolean isProductInWishlist(Integer userId, Integer productId) {
         log.info("Checking if product {} is in wishlist for user: {}", productId, userId);
         
-        Wishlist wishlist = wishlistRepository.findOne(WishlistSpecification.hasUser(userId))
+        Wishlist wishlist = wishlistRepository.findFirstByUser_UserId(userId)
                 .orElse(null);
         
         if (wishlist == null) {

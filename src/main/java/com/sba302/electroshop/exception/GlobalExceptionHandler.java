@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
                 new ApiResponse<>(400, "Validation failed", errors, LocalDateTime.now()));
     }
 
-    @ExceptionHandler({ RuntimeException.class, IllegalStateException.class, IllegalArgumentException.class })
+    @ExceptionHandler({ IllegalStateException.class, IllegalArgumentException.class })
     public ResponseEntity<ApiResponse<Object>> handleCommonRuntimeErrors(Exception ex) {
         return ResponseEntity.badRequest().body(
                 new ApiResponse<>(400, ex.getMessage(), null, LocalDateTime.now()));
