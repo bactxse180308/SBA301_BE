@@ -16,7 +16,7 @@ import com.sba302.electroshop.service.OAuth2Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +34,7 @@ class OAuth2ServiceImpl implements OAuth2Service {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     @Override
@@ -87,7 +88,7 @@ class OAuth2ServiceImpl implements OAuth2Service {
             user = User.builder()
                     .email(email)
                     .fullName(name)
-                    .password(randomSecurePassword) // Db requires this not to be null
+                    .password(passwordEncoder.encode(randomSecurePassword)) // Db requires this not to be null
                     .status(UserStatus.ACTIVE)
                     .role(customerRole)
                     .rewardPoint(0)

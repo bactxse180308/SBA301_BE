@@ -1,12 +1,20 @@
 package com.sba302.electroshop.service.impl;
 
 import com.sba302.electroshop.dto.request.CompanyRequest;
+import com.sba302.electroshop.dto.request.CreateCompanyRequest;
 import com.sba302.electroshop.dto.response.CompanyResponse;
+import com.sba302.electroshop.dto.response.CreateCompanyResponse;
 import com.sba302.electroshop.entity.Company;
-import com.sba302.electroshop.exception.ResourceNotFoundException;
+import com.sba302.electroshop.entity.Role;
+import com.sba302.electroshop.entity.User;
+import com.sba302.electroshop.enums.CompanyStatus;
+import com.sba302.electroshop.enums.UserStatus;
 import com.sba302.electroshop.exception.ResourceConflictException;
+import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.CompanyMapper;
 import com.sba302.electroshop.repository.CompanyRepository;
+import com.sba302.electroshop.repository.RoleRepository;
+import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public CompanyResponse getById(Integer id) {
@@ -48,15 +59,54 @@ class CompanyServiceImpl implements CompanyService {
     public CompanyResponse create(CompanyRequest request) {
         log.info("Creating new company: {}", request.getCompanyName());
 
-        // Check duplicate tax code
         if (companyRepository.existsByTaxCode(request.getTaxCode())) {
             throw new ResourceConflictException("Company with tax code " + request.getTaxCode() + " already exists");
         }
 
         Company company = companyMapper.toEntity(request);
+        company.setStatus(CompanyStatus.PENDING);
         Company savedCompany = companyRepository.save(company);
         log.info("Company created successfully with id: {}", savedCompany.getCompanyId());
         return companyMapper.toResponse(savedCompany);
+    }
+
+    @Override
+    @Transactional
+    public CreateCompanyResponse createWithUser(CreateCompanyRequest request) {
+        log.info("Creating new company with user: {}", request.getCompanyName());
+
+        // 1. Kiểm tra trùng mã số thuế
+        if (companyRepository.existsByTaxCode(request.getTaxCode())) {
+            throw new ResourceConflictException("Company with tax code " + request.getTaxCode() + " already exists");
+        }
+
+        // 2. Kiểm tra user tồn tại
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
+ 
+        if (user.getCompany() != null) {
+            throw new ResourceConflictException("User is already associated with a company");
+        }
+
+        // 3. Tạo Company với trạng thái PENDING (chờ admin duyệt)
+        Company company = companyMapper.toEntity(request);
+        company.setStatus(CompanyStatus.PENDING);
+        Company savedCompany = companyRepository.save(company);
+        log.info("Company created with id: {} and status PENDING", savedCompany.getCompanyId());
+
+        // 4. Cập nhật tài khoản User với role COMPANY và liên kết vào company vừa tạo
+        Role companyRole = roleRepository.findByRoleName("COMPANY")
+                .orElseThrow(() -> new ResourceNotFoundException("Role COMPANY not found"));
+ 
+        user.setCompany(savedCompany);
+        user.setRole(companyRole);
+ 
+        User savedUser = userRepository.save(user);
+        log.info("User (COMPANY) with email: {} linked to company id: {} and role updated",
+                savedUser.getEmail(), savedCompany.getCompanyId());
+ 
+        // 5. Trả về response đầy đủ
+        return companyMapper.toCreateCompanyResponse(savedCompany, savedUser);
     }
 
     @Override
@@ -66,7 +116,6 @@ class CompanyServiceImpl implements CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + id));
 
-        // Check duplicate tax code (exclude current company)
         if (!company.getTaxCode().equals(request.getTaxCode()) &&
             companyRepository.existsByTaxCode(request.getTaxCode())) {
             throw new ResourceConflictException("Company with tax code " + request.getTaxCode() + " already exists");
