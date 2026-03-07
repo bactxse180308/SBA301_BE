@@ -29,6 +29,7 @@ DELETE FROM STORE_BRANCH;
 DELETE FROM SUPPLIER;
 DELETE FROM BRAND;
 DELETE FROM CATEGORY;
+DELETE FROM COMPANY;
 DELETE FROM [ROLE];
 PRINT 'DATA WIPED SUCCESSFULLY. SEEDING NEW DATA...';
 -- =============================================================
@@ -76,6 +77,15 @@ SELECT v.n, v.cp, v.e, v.ph, v.a FROM (VALUES
     (N'Công ty TNHH SmartImport', N'Lê Văn C',     'info@smartimport.vn',   '0901000003', N'78 Nguyễn Huệ, Đà Nẵng')
 ) AS v(n, cp, e, ph, a)
 WHERE NOT EXISTS (SELECT 1 FROM SUPPLIER s WHERE s.email = v.e);
+
+-- 4.5 COMPANY
+INSERT INTO COMPANY (company_name, tax_code, email, phone, address)
+SELECT v.n, v.tc, v.e, v.p, v.a FROM (VALUES
+    (N'Công ty TNHH Phần mềm X', '0312345678', 'contact@xsoftware.vn', '02811112222', N'Tòa nhà X, Cầu Giấy, Hà Nội'),
+    (N'Công ty CP Đầu tư Alpha', '0109876543', 'info@alphainvest.com', '02433334444', N'Tầng 5, Tháp Y, Q.1, TP.HCM'),
+    (N'Tập đoàn Công nghệ Hưng Thịnh', '0310000001', 'sales@hungthinhcorp.com', '0909999999', N'Đà Nẵng')
+) AS v(n, tc, e, p, a)
+WHERE NOT EXISTS (SELECT 1 FROM COMPANY c WHERE c.tax_code = v.tc);
 
 -- 5. STORE_BRANCH
 INSERT INTO STORE_BRANCH (branch_name, location, manager_name, contact_number)
@@ -272,12 +282,12 @@ WHERE NOT EXISTS (SELECT 1 FROM WISHLIST w WHERE w.user_id = v.uid);
 
 -- 13. BULK_ORDER
 -- BulkOrderStatus hợp lệ: PENDING, APPROVED, REJECTED, PROCESSING, COMPLETED, CANCELLED
-INSERT INTO BULK_ORDER (user_id, created_at, status, total_price)
-SELECT v.uid, v.cat, v.st, v.tp FROM (VALUES
-    ((SELECT user_id FROM USERS WHERE email = 'hung.le@company.vn'),   '2026-02-01 09:00:00', 'APPROVED',   158970000),
-    ((SELECT user_id FROM USERS WHERE email = 'tuan.dang@company.vn'), '2026-02-15 10:00:00', 'PENDING',     83960000),
-    ((SELECT user_id FROM USERS WHERE email = 'hung.le@company.vn'),   '2026-03-01 08:00:00', 'PROCESSING',  43990000)
-) AS v(uid, cat, st, tp);
+INSERT INTO BULK_ORDER (user_id, company_id, created_at, status, total_price)
+SELECT v.uid, v.cid, v.cat, v.st, v.tp FROM (VALUES
+    ((SELECT user_id FROM USERS WHERE email = 'hung.le@company.vn'),   (SELECT company_id FROM COMPANY WHERE tax_code = '0109876543'), '2026-02-01 09:00:00', 'APPROVED',   158970000),
+    ((SELECT user_id FROM USERS WHERE email = 'tuan.dang@company.vn'), (SELECT company_id FROM COMPANY WHERE tax_code = '0310000001'), '2026-02-15 10:00:00', 'PENDING',     83960000),
+    ((SELECT user_id FROM USERS WHERE email = 'hung.le@company.vn'),   (SELECT company_id FROM COMPANY WHERE tax_code = '0109876543'), '2026-03-01 08:00:00', 'PROCESSING',  43990000)
+) AS v(uid, cid, cat, st, tp);
 
 -- 14. REVIEW
 INSERT INTO REVIEW (user_id, product_id, rating, comment, review_date)

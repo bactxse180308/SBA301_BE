@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "ROLE")
@@ -29,6 +30,7 @@ public class Role {
     @Column(name = "role_name", nullable = false, unique = true, length = 50)
     private String roleName; // ADMIN, COMPANY, CUSTOMER
 
+    @Nationalized
     @Column(name = "description", length = 255)
     private String description;
 }

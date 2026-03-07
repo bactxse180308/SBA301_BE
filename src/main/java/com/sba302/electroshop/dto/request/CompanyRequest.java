@@ -3,6 +3,8 @@ package com.sba302.electroshop.dto.request;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,4 +28,26 @@ public class CompanyRequest {
 
     @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;
+
+    @Size(max = 255, message = "Representative name must be less than 255 characters")
+    private String representativeName;
+
+    @Size(max = 100, message = "Representative position must be less than 100 characters")
+    private String representativePosition;
+
+    @Size(max = 255, message = "Website URL must be less than 255 characters")
+    private String website;
+
+    private LocalDate foundingDate;
+
+    @Size(max = 100, message = "Business type must be less than 100 characters")
+    private String businessType;
+
+    private Integer employeeCount;
+
+    @Size(max = 255, message = "Industry must be less than 255 characters")
+    private String industry;
+
+    @Size(max = 500, message = "Logo URL must be less than 500 characters")
+    private String logoUrl;
 }

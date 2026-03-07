@@ -3,6 +3,7 @@ package com.sba302.electroshop.entity;
 import com.sba302.electroshop.enums.CustomizationStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.math.BigDecimal;
 
 @Entity
@@ -26,6 +27,7 @@ public class OrderCustomization {
     @Column(name = "type", length = 50)
     private String type;
 
+    @Nationalized
     @Column(name = "note", length = 2000)
     private String note;
 
