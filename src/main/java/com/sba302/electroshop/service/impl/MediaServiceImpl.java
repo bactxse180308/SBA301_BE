@@ -11,6 +11,8 @@ import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.service.MediaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,16 +46,23 @@ class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    public Page<MediaResponse> getAll(Pageable pageable) {
+        log.info("Fetching all media");
+        return mediaRepository.findAll(pageable)
+                .map(mediaMapper::toResponse);
+    }
+
+    @Override
     @Transactional
     public MediaResponse create(CreateMediaRequest request) {
         log.info("Creating media for product id={}", request.getProductId());
-        
+
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + request.getProductId()));
 
         Media media = mediaMapper.toEntity(request);
         media.setProduct(product);
-        
+
         media = mediaRepository.save(media);
         return mediaMapper.toResponse(media);
     }
@@ -62,12 +71,12 @@ class MediaServiceImpl implements MediaService {
     @Transactional
     public MediaResponse update(Integer id, CreateMediaRequest request) {
         log.info("Updating media id={}", id);
-        
+
         Media media = mediaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Media not found with id: " + id));
 
         mediaMapper.updateEntity(media, request);
-        
+
         if (!media.getProduct().getProductId().equals(request.getProductId())) {
             Product product = productRepository.findById(request.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + request.getProductId()));
@@ -94,6 +103,7 @@ class MediaServiceImpl implements MediaService {
         log.info("Updating sort order for media id={}", id);
         Media media = mediaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Media not found with id: " + id));
+
         media.setSortOrder(sortOrder);
         mediaRepository.save(media);
     }
