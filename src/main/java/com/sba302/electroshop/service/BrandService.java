@@ -9,6 +9,8 @@ public interface BrandService {
 
     BrandResponse getById(Integer id);
 
+    Page<BrandResponse> getAll(Pageable pageable);
+
     Page<BrandResponse> search(String keyword, Pageable pageable);
 
     BrandResponse create(CreateBrandRequest request);

@@ -9,6 +9,8 @@ public interface CategoryService {
 
     CategoryResponse getById(Integer id);
 
+    Page<CategoryResponse> getAll(Pageable pageable);
+
     Page<CategoryResponse> search(String keyword, Pageable pageable);
 
     CategoryResponse create(CreateCategoryRequest request);

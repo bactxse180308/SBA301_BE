@@ -25,10 +25,9 @@ public class BrandController {
     }
 
     @GetMapping
-    public ApiResponse<Page<BrandResponse>> search(
-            @RequestParam(required = false) String keyword,
+    public ApiResponse<Page<BrandResponse>> getAll(
             @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.success(brandService.search(keyword, pageable));
+        return ApiResponse.success(brandService.getAll(pageable));
     }
 
     @PostMapping

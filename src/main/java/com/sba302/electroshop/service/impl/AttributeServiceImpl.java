@@ -31,6 +31,13 @@ class AttributeServiceImpl implements AttributeService {
     }
 
     @Override
+    public Page<AttributeResponse> getAll(Pageable pageable) {
+        log.info("Fetching all attributes");
+        return attributeRepository.findAll(pageable)
+                .map(attributeMapper::toResponse);
+    }
+
+    @Override
     public Page<AttributeResponse> search(String keyword, Pageable pageable) {
         log.info("Searching attributes with keyword={}", keyword);
         return attributeRepository.findByAttributeNameContainingIgnoreCase(keyword, pageable)
