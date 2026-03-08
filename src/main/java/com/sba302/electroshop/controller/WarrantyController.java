@@ -33,14 +33,14 @@ public class WarrantyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<WarrantyResponse> create(@Valid @RequestBody CreateWarrantyRequest request) {
         return ApiResponse.success(warrantyService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<WarrantyResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody CreateWarrantyRequest request) {
@@ -48,7 +48,7 @@ public class WarrantyController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         warrantyService.delete(id);

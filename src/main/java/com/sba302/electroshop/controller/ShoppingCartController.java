@@ -19,7 +19,7 @@ public class ShoppingCartController {
     private final ShoppingCartService shoppingCartService;
 
     @GetMapping("/{userId}")
-    @PreAuthorize("hasAuthority('ADMIN') or authentication.principal.toString() == #userId.toString()")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.toString() == #userId.toString()")
     public ApiResponse<CartResponse> getByUser(@PathVariable Integer userId) {
         return ApiResponse.success(shoppingCartService.getByUser(userId));
     }

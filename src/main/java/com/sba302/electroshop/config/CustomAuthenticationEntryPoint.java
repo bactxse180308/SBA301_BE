@@ -1,6 +1,5 @@
 package com.sba302.electroshop.config;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sba302.electroshop.dto.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +14,8 @@ import java.io.IOException;
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
+    public void commence(HttpServletRequest request,
+                         HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
 
         ApiResponse<Object> apiResponse = ApiResponse.error(
@@ -25,6 +25,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
+
         new ObjectMapper().writeValue(response.getOutputStream(), apiResponse);
     }
 }
