@@ -40,8 +40,6 @@ public class Product {
     @JoinColumn(name = "brand_id")
     private Brand brand;
 
-    @Column(name = "quantity")
-    private Integer quantity;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50)

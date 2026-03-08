@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -72,8 +73,8 @@ class OrderServiceImpl implements OrderService {
         // 2. Validate items — check duplicate productId
         validateNoDuplicateProducts(request.getItems());
 
-        // 3. Batch fetch products + validate (tồn tại, status, price, stock)
-        Map<Integer, Product> productMap = fetchAndValidateProducts(request.getItems());
+        // 3. Batch fetch products, branches + validate (tồn tại, status, price, stock)
+        OrderValidationContext validationContext = fetchAndValidateProducts(request.getItems());
 
         // 4. Build order (chưa save — chưa có totalAmount)
         Order order = Order.builder()
@@ -88,7 +89,7 @@ class OrderServiceImpl implements OrderService {
         order = orderRepository.save(order);
 
         // 5. Build details + deduct stock (batch) → trả về totalAmount gốc
-        BigDecimal totalAmount = buildOrderDetailsAndDeductStock(order, request.getItems(), productMap);
+        BigDecimal totalAmount = buildOrderDetailsAndDeductStock(order, request.getItems(), validationContext);
 
         // 6. Apply voucher nếu có
         if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
@@ -177,44 +178,99 @@ class OrderServiceImpl implements OrderService {
         }
     }
 
+    private record OrderValidationContext(
+            Map<Integer, Product> productMap,
+            Map<Integer, StoreBranch> branchMap,
+            Map<String, BranchProductStock> branchStockMap
+    ) {}
+
     /**
-     * Batch fetch all products in 1 query, then validate each one:
+     * Batch fetch all products, branches, and stocks in 1-2 queries each, then validate each one:
      * - Must exist
      * - Status must be AVAILABLE
      * - Price must be valid (not null, > 0)
-     * - Stock must be sufficient
+     * - Stock must be sufficient (main and branch if applicable)
      */
-    private Map<Integer, Product> fetchAndValidateProducts(List<CreateOrderRequest.OrderItemRequest> items) {
+    private OrderValidationContext fetchAndValidateProducts(List<CreateOrderRequest.OrderItemRequest> items) {
         List<Integer> productIds = items.stream()
                 .map(CreateOrderRequest.OrderItemRequest::getProductId)
+                .distinct()
                 .toList();
 
-        // 1 query: SELECT * FROM product WHERE product_id IN (...)
+        List<Integer> branchIds = items.stream()
+                .map(CreateOrderRequest.OrderItemRequest::getBranchId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        // 1 query for Products
         Map<Integer, Product> productMap = productRepository.findAllById(productIds)
                 .stream()
                 .collect(Collectors.toMap(Product::getProductId, Function.identity()));
 
+        // 1 query for Branches if needed
+        Map<Integer, StoreBranch> branchMap = branchIds.isEmpty() ? Collections.emptyMap() :
+                storeBranchRepository.findAllById(branchIds)
+                        .stream()
+                        .collect(Collectors.toMap(StoreBranch::getBranchId, Function.identity()));
+
+        // 1 query for Branch Stocks if needed
+        Map<String, BranchProductStock> branchStockMap = branchIds.isEmpty() ? Collections.emptyMap() :
+                branchProductStockRepository.findAllByBranchIdsAndProductIds(branchIds, productIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                bps -> bps.getBranch().getBranchId() + "_" + bps.getProduct().getProductId(),
+                                Function.identity()
+                        ));
+
         for (var item : items) {
             Product product = productMap.get(item.getProductId());
-
-            if (product == null) {
-                throw new ResourceNotFoundException("Product not found with id: " + item.getProductId());
-            }
-            if (product.getStatus() != ProductStatus.AVAILABLE) {
-                throw new ApiException("Product is not available: " + product.getProductName()
-                        + " (status: " + product.getStatus() + ")");
-            }
-            if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new ApiException("Product price is invalid: " + product.getProductName());
-            }
-            if (product.getQuantity() == null || product.getQuantity() < item.getQuantity()) {
-                throw new ApiException("Insufficient stock for product: " + product.getProductName()
-                        + " (available: " + (product.getQuantity() != null ? product.getQuantity() : 0)
-                        + ", requested: " + item.getQuantity() + ")");
-            }
+            validateProductBasics(product, item.getProductId());
+            validateBranchInventory(item, product, branchMap, branchStockMap);
         }
 
-        return productMap;
+        return new OrderValidationContext(productMap, branchMap, branchStockMap);
+    }
+
+    private void validateProductBasics(Product product, Integer productId) {
+        if (product == null) {
+            throw new ResourceNotFoundException("Product not found with id: " + productId);
+        }
+        if (product.getStatus() != ProductStatus.AVAILABLE) {
+            throw new ApiException("Product is not available: " + product.getProductName()
+                    + " (status: " + product.getStatus() + ")");
+        }
+        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ApiException("Product price is invalid: " + product.getProductName());
+        }
+    }
+
+    private void validateBranchInventory(CreateOrderRequest.OrderItemRequest item,
+                                       Product product,
+                                       Map<Integer, StoreBranch> branchMap,
+                                       Map<String, BranchProductStock> branchStockMap) {
+        if (item.getBranchId() == null) {
+            throw new ApiException("Branch ID is required for product: " + product.getProductName());
+        }
+
+        StoreBranch branch = branchMap.get(item.getBranchId());
+        if (branch == null) {
+            throw new ResourceNotFoundException("Store branch not found with id: " + item.getBranchId());
+        }
+
+        String key = item.getBranchId() + "_" + item.getProductId();
+        BranchProductStock branchStock = branchStockMap.get(key);
+
+        if (branchStock == null) {
+            throw new ApiException("Product not available at branch: " + item.getBranchId());
+        }
+
+        if (branchStock.getQuantity() < item.getQuantity()) {
+            throw new ApiException("Insufficient branch stock for product: " + product.getProductName()
+                    + " at branch " + item.getBranchId()
+                    + " (available: " + branchStock.getQuantity()
+                    + ", requested: " + item.getQuantity() + ")");
+        }
     }
 
     /**
@@ -223,16 +279,13 @@ class OrderServiceImpl implements OrderService {
      */
     private BigDecimal buildOrderDetailsAndDeductStock(Order order,
                                                        List<CreateOrderRequest.OrderItemRequest> items,
-                                                       Map<Integer, Product> productMap) {
+                                                       OrderValidationContext validationContext) {
         BigDecimal total = BigDecimal.ZERO;
         List<OrderDetail> details = new ArrayList<>();
-        List<Product> updatedProducts = new ArrayList<>();
-
-        // ✅ FIX: collect branch stocks trước, saveAll sau loop thay vì save trong loop
         List<BranchProductStock> updatedBranchStocks = new ArrayList<>();
 
         for (var item : items) {
-            Product product = productMap.get(item.getProductId());
+            Product product = validationContext.productMap().get(item.getProductId());
 
             BigDecimal subtotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(item.getQuantity()));
@@ -244,44 +297,25 @@ class OrderServiceImpl implements OrderService {
                     .unitPrice(product.getPrice())
                     .subtotal(subtotal);
 
-            // Resolve branch nếu có
-            if (item.getBranchId() != null) {
-                StoreBranch branch = storeBranchRepository.findById(item.getBranchId())
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Store branch not found with id: " + item.getBranchId()));
-                detailBuilder.branch(branch);
+            // Resolve branch (Enforced in validation)
+            StoreBranch branch = validationContext.branchMap().get(item.getBranchId());
+            detailBuilder.branch(branch);
 
-                BranchProductStock branchStock = branchProductStockRepository
-                        .findByBranch_BranchIdAndProduct_ProductId(item.getBranchId(), item.getProductId())
-                        .orElseThrow(() -> new ApiException(
-                                "Product not available at branch: " + item.getBranchId()));
+            String key = item.getBranchId() + "_" + item.getProductId();
+            BranchProductStock branchStock = validationContext.branchStockMap().get(key);
 
-                if (branchStock.getQuantity() < item.getQuantity()) {
-                    throw new ApiException("Insufficient branch stock for product: " + product.getProductName()
-                            + " at branch " + item.getBranchId()
-                            + " (available: " + branchStock.getQuantity()
-                            + ", requested: " + item.getQuantity() + ")");
-                }
-
-                branchStock.setQuantity(branchStock.getQuantity() - item.getQuantity());
-                branchStock.setLastUpdated(LocalDateTime.now());
-                updatedBranchStocks.add(branchStock); // ✅ collect, không save ngay
-            }
+            branchStock.setQuantity(branchStock.getQuantity() - item.getQuantity());
+            branchStock.setLastUpdated(LocalDateTime.now());
+            updatedBranchStocks.add(branchStock);
 
             details.add(detailBuilder.build());
-
-            // Deduct main product stock
-            product.setQuantity(product.getQuantity() - item.getQuantity());
-            updatedProducts.add(product);
-
             total = total.add(subtotal);
         }
 
-        // ✅ Batch insert / update — 3 queries thay vì N
+        // Batch insert / update
         orderDetailRepository.saveAll(details);
-        productRepository.saveAll(updatedProducts);
         if (!updatedBranchStocks.isEmpty()) {
-            branchProductStockRepository.saveAll(updatedBranchStocks); // ✅ 1 query
+            branchProductStockRepository.saveAll(updatedBranchStocks);
         }
 
         return total;

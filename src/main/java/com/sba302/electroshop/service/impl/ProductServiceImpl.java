@@ -116,14 +116,4 @@ class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
     }
 
-    @Override
-    @Transactional
-    public void updateStock(Integer id, Integer quantity) {
-        log.info("Updating stock for product id={}, increment={}", id, quantity);
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-        
-        product.setQuantity(product.getQuantity() + quantity);
-        productRepository.save(product);
-    }
 }

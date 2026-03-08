@@ -20,5 +20,4 @@ public interface ProductService {
 
     void delete(Integer id);
 
-    void updateStock(Integer id, Integer quantity);
 }
