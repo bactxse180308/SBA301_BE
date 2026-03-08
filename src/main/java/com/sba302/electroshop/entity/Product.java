@@ -40,7 +40,6 @@ public class Product {
     @JoinColumn(name = "brand_id")
     private Brand brand;
 
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50)
     private ProductStatus status;

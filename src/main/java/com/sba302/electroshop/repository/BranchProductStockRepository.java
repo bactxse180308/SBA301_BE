@@ -32,5 +32,10 @@ public interface BranchProductStockRepository extends JpaRepository<BranchProduc
             @Param("productIds") Collection<Integer> productIds
     );
 
+    @Query("SELECT COALESCE(SUM(bps.quantity), 0) FROM BranchProductStock bps WHERE bps.product.productId = :productId")
+    Integer sumQuantityByProductId(@Param("productId") Integer productId);
 
+    @Query("SELECT bps.product.productId, SUM(bps.quantity) FROM BranchProductStock bps " +
+            "WHERE bps.product.productId IN :productIds GROUP BY bps.product.productId")
+    java.util.List<Object[]> sumQuantityByProductIds(@Param("productIds") Collection<Integer> productIds);
 }

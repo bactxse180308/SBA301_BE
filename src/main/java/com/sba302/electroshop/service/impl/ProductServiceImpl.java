@@ -9,6 +9,7 @@ import com.sba302.electroshop.mapper.ProductMapper;
 import com.sba302.electroshop.repository.BrandRepository;
 import com.sba302.electroshop.repository.CategoryRepository;
 import com.sba302.electroshop.repository.ProductRepository;
+import com.sba302.electroshop.repository.BranchProductStockRepository;
 import com.sba302.electroshop.repository.SupplierRepository;
 import com.sba302.electroshop.service.ProductService;
 import com.sba302.electroshop.specification.ProductSpecification;
@@ -21,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,22 +36,41 @@ class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final SupplierRepository supplierRepository;
+    private final BranchProductStockRepository branchProductStockRepository;
     private final ProductMapper productMapper;
 
     @Override
     public ProductResponse getById(Integer id) {
         log.info("Fetching product with id={}", id);
-        return productRepository.findById(id)
-                .map(productMapper::toResponse)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        
+        ProductResponse response = productMapper.toResponse(product);
+        response.setQuantity(branchProductStockRepository.sumQuantityByProductId(id));
+        return response;
     }
 
     @Override
     public Page<ProductResponse> search(String keyword, Integer categoryId, Integer brandId, Pageable pageable) {
         log.info("Searching products keyword={}, categoryId={}, brandId={}", keyword, categoryId, brandId);
         Specification<Product> spec = ProductSpecification.filter(keyword, categoryId, brandId);
-        return productRepository.findAll(spec, pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
+        
+        List<Integer> productIds = productPage.getContent().stream()
+                .map(Product::getProductId)
+                .collect(Collectors.toList());
+        
+        Map<Integer, Integer> stockMap = branchProductStockRepository.sumQuantityByProductIds(productIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> ((Long) row[1]).intValue()
+                ));
+        
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            response.setQuantity(stockMap.getOrDefault(product.getProductId(), 0));
+            return response;
+        });
     }
 
     @Override
