@@ -9,7 +9,7 @@ public interface OrderMapper {
 
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "user.fullName", target = "userFullName")
-    @Mapping(source = "voucher.voucherCode", target = "voucherCode")
+    @Mapping(source = "userVoucher.voucher.voucherCode", target = "voucherCode")
     @Mapping(source = "orderStatus", target = "orderStatus")
     OrderResponse toResponse(Order order);
 }

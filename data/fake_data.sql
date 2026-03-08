@@ -5,24 +5,31 @@
 -- WIPE EXISTING DATA (CLEAN SLATE - SAFE REVERSE ORDER)
 -- =============================================================
 PRINT 'WIPING OLD DATA...';
+-- Level 3/4 dependencies (Leaf nodes)
 DELETE FROM ORDER_CUSTOMIZATION;
 DELETE FROM BULK_PRICE_TIER;
 DELETE FROM BULK_ORDER_DETAILS;
 DELETE FROM WISHLIST_ITEM;
 DELETE FROM CART_ITEM;
 DELETE FROM ORDER_DETAIL;
-DELETE FROM USER_VOUCHER;
+
+-- Level 2 dependencies
+DELETE FROM [ORDER]; -- Must delete before USER_VOUCHER
+DELETE FROM USER_VOUCHER; -- Must delete before VOUCHER
+DELETE FROM BULK_ORDER;
+DELETE FROM WISHLIST;
+DELETE FROM SHOPPING_CART;
+DELETE FROM REVIEW;
+
+-- Level 1 dependencies
 DELETE FROM BRANCH_PRODUCT_STOCK;
 DELETE FROM PRODUCT_ATTRIBUTE;
 DELETE FROM MEDIA;
 DELETE FROM WARRANTY;
-DELETE FROM REVIEW;
-DELETE FROM BULK_ORDER;
-DELETE FROM WISHLIST;
-DELETE FROM SHOPPING_CART;
-DELETE FROM [ORDER];
-DELETE FROM PRODUCT;
--- DELETE FROM USERS;
+DELETE FROM USERS; -- Must delete before COMPANY and [ROLE]
+DELETE FROM PRODUCT; -- Must delete after ORDER_DETAIL, etc.
+
+-- Level 0 dependencies (Root nodes)
 DELETE FROM VOUCHER;
 DELETE FROM ATTRIBUTE;
 DELETE FROM STORE_BRANCH;
@@ -79,12 +86,13 @@ SELECT v.n, v.cp, v.e, v.ph, v.a FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM SUPPLIER s WHERE s.email = v.e);
 
 -- 4.5 COMPANY
-INSERT INTO COMPANY (company_name, tax_code, email, phone, address)
-SELECT v.n, v.tc, v.e, v.p, v.a FROM (VALUES
-    (N'Công ty TNHH Phần mềm X', '0312345678', 'contact@xsoftware.vn', '02811112222', N'Tòa nhà X, Cầu Giấy, Hà Nội'),
-    (N'Công ty CP Đầu tư Alpha', '0109876543', 'info@alphainvest.com', '02433334444', N'Tầng 5, Tháp Y, Q.1, TP.HCM'),
-    (N'Tập đoàn Công nghệ Hưng Thịnh', '0310000001', 'sales@hungthinhcorp.com', '0909999999', N'Đà Nẵng')
-) AS v(n, tc, e, p, a)
+-- 4.5 COMPANY (đầy đủ các trường)
+INSERT INTO COMPANY (company_name, tax_code, email, phone, address, representative_name, representative_position, website, founding_date, business_type, employee_count, industry, status, approved_at)
+SELECT v.n, v.tc, v.e, v.p, v.a, v.rn, v.rp, v.w, v.fd, v.bt, v.ec, v.ind, v.st, v.aa FROM (VALUES
+    (N'Công ty TNHH Phần mềm X', '0312345678', 'contact@xsoftware.vn', '02811112222', N'Tòa nhà X, Cầu Giấy, Hà Nội', N'Nguyễn Văn X', N'Giám đốc', 'https://xsoftware.vn', '2015-05-10', N'TNHH', 150, N'Công nghệ thông tin', 'APPROVED', '2025-01-01 08:00:00'),
+    (N'Công ty CP Đầu tư Alpha', '0109876543', 'info@alphainvest.com', '02433334444', N'Tầng 5, Tháp Y, Q.1, TP.HCM', N'Trần Alpha', N'CEO', 'https://alphainvest.com', '2010-09-20', N'Cổ phần', 500, N'Đầu tư tài chính', 'APPROVED', '2025-01-01 08:00:00'),
+    (N'Tập đoàn Công nghệ Hưng Thịnh', '0310000001', 'sales@hungthinhcorp.com', '0909999999', N'Đà Nẵng', N'Lê Hưng Thịnh', N'Chủ tịch', 'https://hungthinhcorp.com', '2008-11-15', N'Tập đoàn', 2000, N'Đa ngành', 'APPROVED', '2025-01-01 08:00:00')
+) AS v(n, tc, e, p, a, rn, rp, w, fd, bt, ec, ind, st, aa)
 WHERE NOT EXISTS (SELECT 1 FROM COMPANY c WHERE c.tax_code = v.tc);
 
 -- 5. STORE_BRANCH
@@ -106,14 +114,15 @@ SELECT v.n FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM ATTRIBUTE a WHERE a.attribute_name = v.n);
 
 -- 7. VOUCHER (unique: voucher_code)
-INSERT INTO VOUCHER (voucher_code, description, discount_value, discount_type, valid_from, valid_to, usage_limit)
-SELECT v.code, v.descr, v.dval, v.dtype, v.vfrom, v.vto, v.ulimit FROM (VALUES
-    ('SALE10',      N'Giảm 10% toàn đơn hàng',        10.00,     'PERCENTAGE', '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1000),
-    ('FLAT50K',     N'Giảm 50k cho đơn từ 500k',       50000.00,  'FIXED',      '2026-01-01 00:00:00', '2026-06-30 23:59:59', 500),
-    ('NEWUSER20',   N'Giảm 20% cho khách hàng mới',   20.00,     'PERCENTAGE', '2026-01-01 00:00:00', '2026-12-31 23:59:59', 200),
-    ('SUMMER15',    N'Khuyến mại hè 2026 - giảm 15%', 15.00,     'PERCENTAGE', '2026-06-01 00:00:00', '2026-08-31 23:59:59', 300),
-    ('VIPFLAT100K', N'VIP giảm 100k',                  100000.00, 'FIXED',      '2026-01-01 00:00:00', '2026-12-31 23:59:59', 100)
-) AS v(code, descr, dval, dtype, vfrom, vto, ulimit)
+-- 7. VOUCHER (unique: voucher_code) - đầy đủ các trường
+INSERT INTO VOUCHER (voucher_code, description, discount_value, discount_type, min_order_value, max_discount, used_count, valid_from, valid_to, usage_limit, is_active)
+SELECT v.code, v.descr, v.dval, v.dtype, v.minv, v.maxd, v.ucnt, v.vfrom, v.vto, v.ulimit, v.act FROM (VALUES
+    ('SALE10',      N'Giảm 10% toàn đơn hàng',        10.00,     'PERCENT',  0,      500000, 0, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1000, 1),
+    ('FLAT50K',     N'Giảm 50k cho đơn từ 500k',       50000.00,  'FIXED',    500000, 50000,  0, '2026-01-01 00:00:00', '2026-06-30 23:59:59', 500,  1),
+    ('NEWUSER20',   N'Giảm 20% cho khách hàng mới',   20.00,     'PERCENT',  0,      100000, 0, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 200,  1),
+    ('SUMMER15',    N'Khuyến mại hè 2026 - giảm 15%', 15.00,     'PERCENT',  1000000,200000, 0, '2026-06-01 00:00:00', '2026-08-31 23:59:59', 300,  1),
+    ('VIPFLAT100K', N'VIP giảm 100k',                  100000.00, 'FIXED',    2000000,100000, 0, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 100,  1)
+) AS v(code, descr, dval, dtype, minv, maxd, ucnt, vfrom, vto, ulimit, act)
 WHERE NOT EXISTS (SELECT 1 FROM VOUCHER vc WHERE vc.voucher_code = v.code);
 
 -- =============================================================
@@ -234,28 +243,58 @@ WHERE NOT EXISTS (SELECT 1 FROM PRODUCT p WHERE p.product_name = v.pn);
 -- =============================================================
 
 -- 10. [ORDER] – SQL Server: dùng [ORDER] không phải "ORDER"
-INSERT INTO [ORDER] (user_id, order_date, total_amount, order_status, shipping_address, payment_method, voucher_id)
-SELECT v.uid, v.odate, v.total, v.st, v.addr, v.pm, v.vid FROM (VALUES
+-- 10. USER_VOUCHER (VoucherStatus hợp lệ: AVAILABLE, USED, EXPIRED)
+-- Chèn trước [ORDER] vì Order phụ thuộc UserVoucher
+INSERT INTO USER_VOUCHER (user_id, voucher_id, status, assigned_at, used_at)
+SELECT v.uid, v.vid, v.st, v.aa, v.ua FROM (VALUES
     ((SELECT user_id FROM USERS WHERE email = 'binh.nguyen@gmail.com'),
-     '2026-01-15 10:30:00', 29990000, 'DELIVERED', N'23 Lê Duẩn, Hà Nội', 'CREDIT_CARD',
-     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'SALE10')),
+     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'SALE10'),
+     'USED', '2026-01-10 09:00:00', '2026-01-15 10:30:00'),
 
     ((SELECT user_id FROM USERS WHERE email = 'huong.tran@gmail.com'),
-     '2026-01-20 14:00:00', 36980000, 'DELIVERED', N'55 Trần Phú, Đà Nẵng', 'BANK_TRANSFER', NULL),
-
-    ((SELECT user_id FROM USERS WHERE email = 'hung.le@company.vn'),
-     '2026-02-05 09:00:00', 52990000, 'PROCESSING', N'88 Nguyễn Trãi, TP.HCM', 'CASH_ON_DELIVERY', NULL),
+     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'NEWUSER20'),
+     'AVAILABLE', '2026-01-18 11:00:00', NULL),
 
     ((SELECT user_id FROM USERS WHERE email = 'kimchi.hoang@gmail.com'),
-     '2026-02-10 11:30:00', 8940000, 'DELIVERED', N'34 Pasteur, Q.3, TP.HCM', 'CREDIT_CARD',
-     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'FLAT50K')),
+     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'FLAT50K'),
+     'USED', '2026-02-08 10:00:00', '2026-02-10 11:30:00'),
 
     ((SELECT user_id FROM USERS WHERE email = 'nam.vu@gmail.com'),
-     '2026-02-20 16:00:00', 6290000, 'CANCELLED', N'67 Đinh Bộ Lĩnh, Bình Thạnh', 'CREDIT_CARD', NULL),
+     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'NEWUSER20'),
+     'AVAILABLE', '2026-02-18 15:00:00', NULL),
+
+    ((SELECT user_id FROM USERS WHERE email = 'tuan.dang@company.vn'),
+     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'VIPFLAT100K'),
+     'AVAILABLE', '2026-01-01 00:00:00', NULL)
+) AS v(uid, vid, st, aa, ua)
+WHERE NOT EXISTS (
+    SELECT 1 FROM USER_VOUCHER uv 
+    WHERE uv.user_id = v.uid AND uv.voucher_id = v.vid
+);
+
+-- 11. [ORDER]
+INSERT INTO [ORDER] (user_id, order_date, total_amount, discount_amount, final_amount, order_status, shipping_address, payment_method, voucher_id)
+SELECT v.uid, v.odate, v.total, v.disc, v.final, v.st, v.addr, v.pm, v.vid FROM (VALUES
+    ((SELECT user_id FROM USERS WHERE email = 'binh.nguyen@gmail.com'),
+     '2026-01-15 10:30:00', 29990000, 2999000, 26991000, 'DELIVERED', N'23 Lê Duẩn, Hà Nội', 'CREDIT_CARD',
+     (SELECT user_voucher_id FROM USER_VOUCHER uv JOIN VOUCHER v ON uv.voucher_id = v.voucher_id WHERE v.voucher_code = 'SALE10' AND uv.user_id = (SELECT user_id FROM USERS WHERE email = 'binh.nguyen@gmail.com'))),
+
+    ((SELECT user_id FROM USERS WHERE email = 'huong.tran@gmail.com'),
+     '2026-01-20 14:00:00', 36980000, 0, 36980000, 'DELIVERED', N'55 Trần Phú, Đà Nẵng', 'BANK_TRANSFER', NULL),
+
+    ((SELECT user_id FROM USERS WHERE email = 'hung.le@company.vn'),
+     '2026-02-05 09:00:00', 52990000, 0, 52990000, 'PROCESSING', N'88 Nguyễn Trãi, TP.HCM', 'CASH_ON_DELIVERY', NULL),
+
+    ((SELECT user_id FROM USERS WHERE email = 'kimchi.hoang@gmail.com'),
+     '2026-02-10 11:30:00', 8990000, 50000, 8940000, 'DELIVERED', N'34 Pasteur, Q.3, TP.HCM', 'CREDIT_CARD',
+     (SELECT user_voucher_id FROM USER_VOUCHER uv JOIN VOUCHER v ON uv.voucher_id = v.voucher_id WHERE v.voucher_code = 'FLAT50K' AND uv.user_id = (SELECT user_id FROM USERS WHERE email = 'kimchi.hoang@gmail.com'))),
+
+    ((SELECT user_id FROM USERS WHERE email = 'nam.vu@gmail.com'),
+     '2026-02-20 16:00:00', 6290000, 0, 6290000, 'CANCELLED', N'67 Đinh Bộ Lĩnh, Bình Thạnh', 'CREDIT_CARD', NULL),
 
     ((SELECT user_id FROM USERS WHERE email = 'binh.nguyen@gmail.com'),
-     '2026-03-01 08:00:00', 12990000, 'PENDING', N'23 Lê Duẩn, Hà Nội', 'BANK_TRANSFER', NULL)
-) AS v(uid, odate, total, st, addr, pm, vid);
+     '2026-03-01 08:00:00', 12990000, 0, 12990000, 'PENDING', N'23 Lê Duẩn, Hà Nội', 'BANK_TRANSFER', NULL)
+) AS v(uid, odate, total, disc, final, st, addr, pm, vid);
 
 -- 11. SHOPPING_CART
 INSERT INTO SHOPPING_CART (user_id, created_date, last_updated)
@@ -403,29 +442,7 @@ SELECT v.bid, v.pid, v.qty, v.lu FROM (VALUES
      (SELECT MIN(product_id) FROM PRODUCT       WHERE product_name = N'Dell XPS 15 9530'),               8, '2026-02-10 09:00:00')
 ) AS v(bid, pid, qty, lu);
 
--- 19. USER_VOUCHER (VoucherStatus hợp lệ: AVAILABLE, USED, EXPIRED)
-INSERT INTO USER_VOUCHER (user_id, voucher_id, status, assigned_at, used_at)
-SELECT v.uid, v.vid, v.st, v.aa, v.ua FROM (VALUES
-    ((SELECT user_id FROM USERS WHERE email = 'binh.nguyen@gmail.com'),
-     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'SALE10'),
-     'USED', '2026-01-10 09:00:00', '2026-01-15 10:30:00'),
-
-    ((SELECT user_id FROM USERS WHERE email = 'huong.tran@gmail.com'),
-     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'NEWUSER20'),
-     'AVAILABLE', '2026-01-18 11:00:00', NULL),
-
-    ((SELECT user_id FROM USERS WHERE email = 'kimchi.hoang@gmail.com'),
-     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'FLAT50K'),
-     'USED', '2026-02-08 10:00:00', '2026-02-10 11:30:00'),
-
-    ((SELECT user_id FROM USERS WHERE email = 'nam.vu@gmail.com'),
-     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'NEWUSER20'),
-     'AVAILABLE', '2026-02-18 15:00:00', NULL),
-
-    ((SELECT user_id FROM USERS WHERE email = 'tuan.dang@company.vn'),
-     (SELECT voucher_id FROM VOUCHER WHERE voucher_code = 'VIPFLAT100K'),
-     'AVAILABLE', '2026-01-01 00:00:00', NULL)
-) AS v(uid, vid, st, aa, ua);
+-- USER_VOUCHER đã được chèn ở Level 2 phía trên.
 
 -- =============================================================
 -- LEVEL 3
@@ -438,7 +455,7 @@ VALUES
  (SELECT o.order_id FROM [ORDER] o JOIN USERS u ON o.user_id = u.user_id WHERE u.email = 'binh.nguyen@gmail.com'  AND o.order_date = '2026-01-15 10:30:00'),
  (SELECT product_id FROM PRODUCT WHERE product_name = N'iPhone 15 Pro 256GB'),
  (SELECT branch_id  FROM STORE_BRANCH WHERE branch_name = N'Chi nhánh Hà Nội'),
- 1, 29990000, 2999000, 26991000
+ 1, 29990000, 0, 29990000
 ),
 (
  (SELECT o.order_id FROM [ORDER] o JOIN USERS u ON o.user_id = u.user_id WHERE u.email = 'huong.tran@gmail.com'   AND o.order_date = '2026-01-20 14:00:00'),
@@ -462,7 +479,7 @@ VALUES
  (SELECT o.order_id FROM [ORDER] o JOIN USERS u ON o.user_id = u.user_id WHERE u.email = 'kimchi.hoang@gmail.com' AND o.order_date = '2026-02-10 11:30:00'),
  (SELECT product_id FROM PRODUCT WHERE product_name = N'Sony WH-1000XM5'),
  NULL,
- 1, 8990000, 50000, 8940000
+ 1, 8990000, 0, 8990000
 ),
 (
  (SELECT o.order_id FROM [ORDER] o JOIN USERS u ON o.user_id = u.user_id WHERE u.email = 'nam.vu@gmail.com'        AND o.order_date = '2026-02-20 16:00:00'),

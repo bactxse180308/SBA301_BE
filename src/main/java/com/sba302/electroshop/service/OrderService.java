@@ -20,5 +20,4 @@ public interface OrderService {
 
     void cancelOrder(Integer orderId);
 
-    OrderResponse applyVoucher(Integer orderId, String voucherCode);
 }

@@ -10,6 +10,8 @@ import org.mapstruct.*;
 public interface VoucherMapper {
 
     @Mapping(target = "voucherId", ignore = true)
+    @Mapping(target = "usedCount", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
     Voucher toEntity(CreateVoucherRequest request);
 
     VoucherResponse toResponse(Voucher voucher);
@@ -17,5 +19,7 @@ public interface VoucherMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "voucherId", ignore = true)
     @Mapping(target = "voucherCode", ignore = true)
+    @Mapping(target = "usedCount", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
     void updateEntity(@MappingTarget Voucher entity, UpdateVoucherRequest request);
 }

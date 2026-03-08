@@ -34,6 +34,12 @@ public class Order {
     @Column(name = "total_amount")
     private BigDecimal totalAmount;
 
+    @Column(name = "discount_amount")
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Column(name = "final_amount")
+    private BigDecimal finalAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status", length = 50)
     private OrderStatus orderStatus;
@@ -47,5 +53,5 @@ public class Order {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "voucher_id")
-    private Voucher voucher;
+    private UserVoucher userVoucher;
 }

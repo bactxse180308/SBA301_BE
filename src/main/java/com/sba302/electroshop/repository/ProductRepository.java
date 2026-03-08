@@ -3,6 +3,8 @@ package com.sba302.electroshop.repository;
 import com.sba302.electroshop.entity.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -13,4 +15,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(p) FROM Product p WHERE p.status = 'ACTIVE'")
     Integer countActiveProducts();
+
+    @EntityGraph(attributePaths = {"category", "brand", "supplier"})
+    Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 }

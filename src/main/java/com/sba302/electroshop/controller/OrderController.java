@@ -53,11 +53,4 @@ public class OrderController {
         orderService.cancelOrder(id);
         return ApiResponse.success(null);
     }
-
-    @PostMapping("/{id}/voucher")
-    public ApiResponse<OrderResponse> applyVoucher(
-            @PathVariable Integer id,
-            @RequestParam String voucherCode) {
-        return ApiResponse.success(orderService.applyVoucher(id, voucherCode));
-    }
 }

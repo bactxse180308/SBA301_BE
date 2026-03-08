@@ -1,6 +1,7 @@
 package com.sba302.electroshop.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -8,14 +9,12 @@ import org.springframework.stereotype.Repository;
 import com.sba302.electroshop.entity.Order;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Integer> {
+public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpecificationExecutor<Order> {
     @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END " +
            "FROM Order o JOIN OrderDetail od ON o.orderId = od.order.orderId " +
            "WHERE o.user.userId = :userId AND od.product.productId = :productId " +
            "AND o.orderStatus = 'DELIVERED'")
     boolean hasUserPurchasedProduct(@Param("userId") Integer userId, @Param("productId") Integer productId);
-
-    long countByVoucher_VoucherId(Integer voucherId);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.orderDate >= :startOfDay AND o.orderDate < :endOfDay")
     Integer countOrdersByDateRange(@Param("startOfDay") java.time.LocalDateTime startOfDay, @Param("endOfDay") java.time.LocalDateTime endOfDay);
@@ -33,4 +32,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "FROM Order o " +
            "ORDER BY o.orderDate DESC")
     java.util.List<com.sba302.electroshop.dto.response.RecentOrderResponse> findRecentOrders(org.springframework.data.domain.Pageable pageable);
+
+
+
 }

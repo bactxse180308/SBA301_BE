@@ -1,5 +1,6 @@
 package com.sba302.electroshop.entity;
 
+import com.sba302.electroshop.enums.DiscountType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
@@ -30,8 +31,14 @@ public class Voucher {
     @Column(name = "discount_value")
     private BigDecimal discountValue;
 
-    @Column(name = "discount_type", length = 50)
-    private String discountType;
+    @Enumerated(EnumType.STRING)
+    private DiscountType discountType;
+
+    private BigDecimal minOrderValue;
+
+    private BigDecimal maxDiscount;
+
+    private Integer usedCount;
 
     @Column(name = "valid_from")
     private LocalDateTime validFrom;
@@ -41,4 +48,8 @@ public class Voucher {
 
     @Column(name = "usage_limit")
     private Integer usageLimit;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
 }
