@@ -17,8 +17,14 @@ public class UpdateVoucherRequest {
     @DecimalMin(value = "0.01", message = "Discount value must be greater than 0")
     private BigDecimal discountValue;
 
-    @Pattern(regexp = "^(PERCENTAGE|FIXED_AMOUNT)$", message = "Discount type must be PERCENTAGE or FIXED_AMOUNT")
+    @Pattern(regexp = "^(PERCENT|FIXED)$", message = "Discount type must be PERCENT or FIXED")
     private String discountType;
+
+    @Min(value = 0, message = "Minimum order value must be non-negative")
+    private BigDecimal minOrderValue;
+
+    @Min(value = 0, message = "Maximum discount must be non-negative")
+    private BigDecimal maxDiscount;
 
     private LocalDateTime validFrom;
 

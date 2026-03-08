@@ -7,6 +7,7 @@ import com.sba302.electroshop.dto.response.BulkOrderResponse;
 import com.sba302.electroshop.entity.*;
 import com.sba302.electroshop.enums.BulkOrderStatus;
 import com.sba302.electroshop.enums.CustomizationStatus;
+import com.sba302.electroshop.enums.DiscountType;
 import com.sba302.electroshop.enums.VoucherStatus;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.BulkOrderMapper;
@@ -140,11 +141,11 @@ class BulkOrderServiceImpl implements BulkOrderService {
             BigDecimal discountAmount = BigDecimal.ZERO;
             BigDecimal discountPercentage = BigDecimal.ZERO;
 
-            if ("PERCENTAGE".equalsIgnoreCase(voucher.getDiscountType())) {
+            if (voucher.getDiscountType() == DiscountType.PERCENT) {
                 discountPercentage = voucher.getDiscountValue();
                 discountAmount = subtotal.multiply(discountPercentage)
                         .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-            } else if ("FIXED_AMOUNT".equalsIgnoreCase(voucher.getDiscountType())) {
+            } else if (voucher.getDiscountType() == DiscountType.FIXED) {
                 discountAmount = voucher.getDiscountValue();
             }
 

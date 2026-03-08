@@ -6,21 +6,22 @@ import com.sba302.electroshop.entity.*;
 import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.enums.ProductStatus;
 import com.sba302.electroshop.enums.UserStatus;
-import com.sba302.electroshop.enums.VoucherStatus;
 import com.sba302.electroshop.exception.ApiException;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.OrderMapper;
 import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.OrderService;
+import com.sba302.electroshop.service.VoucherService;
+import com.sba302.electroshop.specification.OrderSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -35,11 +36,14 @@ class OrderServiceImpl implements OrderService {
     private final OrderDetailRepository orderDetailRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final VoucherRepository voucherRepository;
-    private final UserVoucherRepository userVoucherRepository;
     private final BranchProductStockRepository branchProductStockRepository;
     private final StoreBranchRepository storeBranchRepository;
     private final OrderMapper orderMapper;
+    private final VoucherService voucherService;
+
+    // ================================================================
+    // PUBLIC METHODS
+    // ================================================================
 
     @Override
     @Transactional(readOnly = true)
@@ -52,14 +56,8 @@ class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> search(Integer userId, OrderStatus status, Pageable pageable) {
-        Page<Order> page;
-
-        if (userId != null && status != null) {
-            page = orderRepository.findAll(pageable);
-        } else {
-            page = orderRepository.findAll(pageable);
-        }
-
+        Specification<Order> spec = OrderSpecification.filterOrders(userId, status);
+        Page<Order> page = orderRepository.findAll(spec, pageable);
         return page.map(orderMapper::toResponse);
     }
 
@@ -77,7 +75,7 @@ class OrderServiceImpl implements OrderService {
         // 3. Batch fetch products + validate (tồn tại, status, price, stock)
         Map<Integer, Product> productMap = fetchAndValidateProducts(request.getItems());
 
-        // 4. Build order
+        // 4. Build order (chưa save — chưa có totalAmount)
         Order order = Order.builder()
                 .user(user)
                 .orderDate(LocalDateTime.now())
@@ -85,18 +83,40 @@ class OrderServiceImpl implements OrderService {
                 .shippingAddress(request.getShippingAddress())
                 .paymentMethod(request.getPaymentMethod())
                 .build();
+
+        // ✅ FIX: save 1 lần để lấy orderId cho FK trong OrderDetail
         order = orderRepository.save(order);
 
-        // 5. Build details + deduct stock (batch)
+        // 5. Build details + deduct stock (batch) → trả về totalAmount gốc
         BigDecimal totalAmount = buildOrderDetailsAndDeductStock(order, request.getItems(), productMap);
-        order.setTotalAmount(totalAmount);
 
         // 6. Apply voucher nếu có
         if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
-            applyVoucherDiscount(order, userId, request.getVoucherCode(), totalAmount);
+            UserVoucher userVoucher = voucherService.validateAndGetVoucher(
+                    request.getVoucherCode(), userId, totalAmount);
+
+            BigDecimal discount = voucherService.calculateDiscount(
+                    userVoucher.getVoucher(), totalAmount);
+
+            BigDecimal finalAmount = totalAmount.subtract(discount).max(BigDecimal.ZERO);
+
+            order.setTotalAmount(totalAmount);       // ✅ tổng gốc trước giảm
+            order.setDiscountAmount(discount);        // ✅ snapshot discount
+            order.setFinalAmount(finalAmount);        // ✅ thực tế thanh toán
+            order.setUserVoucher(userVoucher);
+
+            voucherService.markVoucherAsUsed(userVoucher.getUserVoucherId());
+            Order savedOrder = orderRepository.save(order);
+
+            log.info("Order placed with voucher, id={}, discount={}", savedOrder.getOrderId(), discount);
+            return orderMapper.toResponse(savedOrder);
         }
 
-        // 7. Save & return
+        // 7. Không có voucher — save thẳng
+        order.setTotalAmount(totalAmount);
+        order.setDiscountAmount(BigDecimal.ZERO);
+        order.setFinalAmount(totalAmount);
+
         Order savedOrder = orderRepository.save(order);
         log.info("Order placed successfully with id={}", savedOrder.getOrderId());
         return orderMapper.toResponse(savedOrder);
@@ -128,36 +148,9 @@ class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
     }
 
-    @Override
-    @Transactional
-    public OrderResponse applyVoucher(Integer orderId, String voucherCode) {
-        log.info("Applying voucher {} to order {}", voucherCode, orderId);
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-
-        Voucher voucher = voucherRepository.findByVoucherCode(voucherCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Voucher not found: " + voucherCode));
-
-        // Validate voucher
-        validateVoucherExpiry(voucher);
-
-        BigDecimal total = order.getTotalAmount();
-        BigDecimal discount = calculateDiscount(voucher, total);
-        BigDecimal finalTotal = total.subtract(discount);
-
-        if (finalTotal.compareTo(BigDecimal.ZERO) < 0) {
-            finalTotal = BigDecimal.ZERO;
-        }
-
-        order.setVoucher(voucher);
-        order.setTotalAmount(finalTotal);
-        orderRepository.save(order);
-
-        return orderMapper.toResponse(order);
-    }
-
-    // ======================== PRIVATE HELPER METHODS ========================
+    // ================================================================
+    // PRIVATE HELPER METHODS
+    // ================================================================
 
     /**
      * Validate user exists and is ACTIVE.
@@ -196,7 +189,7 @@ class OrderServiceImpl implements OrderService {
                 .map(CreateOrderRequest.OrderItemRequest::getProductId)
                 .toList();
 
-        // 1 query: SELECT * FROM PRODUCT WHERE product_id IN (...)
+        // 1 query: SELECT * FROM product WHERE product_id IN (...)
         Map<Integer, Product> productMap = productRepository.findAllById(productIds)
                 .stream()
                 .collect(Collectors.toMap(Product::getProductId, Function.identity()));
@@ -204,23 +197,16 @@ class OrderServiceImpl implements OrderService {
         for (var item : items) {
             Product product = productMap.get(item.getProductId());
 
-            // Check tồn tại
             if (product == null) {
                 throw new ResourceNotFoundException("Product not found with id: " + item.getProductId());
             }
-
-            // Check status
             if (product.getStatus() != ProductStatus.AVAILABLE) {
                 throw new ApiException("Product is not available: " + product.getProductName()
                         + " (status: " + product.getStatus() + ")");
             }
-
-            // Check price
             if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new ApiException("Product price is invalid: " + product.getProductName());
             }
-
-            // Check stock
             if (product.getQuantity() == null || product.getQuantity() < item.getQuantity()) {
                 throw new ApiException("Insufficient stock for product: " + product.getProductName()
                         + " (available: " + (product.getQuantity() != null ? product.getQuantity() : 0)
@@ -232,8 +218,8 @@ class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * Build OrderDetail list, deduct stock, resolve branch, and saveAll in batch.
-     * Returns the total amount.
+     * Build OrderDetail list, deduct stock (main + branch), and saveAll in batch.
+     * Returns the original total amount before any discount.
      */
     private BigDecimal buildOrderDetailsAndDeductStock(Order order,
                                                        List<CreateOrderRequest.OrderItemRequest> items,
@@ -241,6 +227,9 @@ class OrderServiceImpl implements OrderService {
         BigDecimal total = BigDecimal.ZERO;
         List<OrderDetail> details = new ArrayList<>();
         List<Product> updatedProducts = new ArrayList<>();
+
+        // ✅ FIX: collect branch stocks trước, saveAll sau loop thay vì save trong loop
+        List<BranchProductStock> updatedBranchStocks = new ArrayList<>();
 
         for (var item : items) {
             Product product = productMap.get(item.getProductId());
@@ -255,14 +244,13 @@ class OrderServiceImpl implements OrderService {
                     .unitPrice(product.getPrice())
                     .subtotal(subtotal);
 
-            // Resolve branch if provided
+            // Resolve branch nếu có
             if (item.getBranchId() != null) {
                 StoreBranch branch = storeBranchRepository.findById(item.getBranchId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Store branch not found with id: " + item.getBranchId()));
                 detailBuilder.branch(branch);
 
-                // Also deduct branch stock
                 BranchProductStock branchStock = branchProductStockRepository
                         .findByBranch_BranchIdAndProduct_ProductId(item.getBranchId(), item.getProductId())
                         .orElseThrow(() -> new ApiException(
@@ -277,7 +265,7 @@ class OrderServiceImpl implements OrderService {
 
                 branchStock.setQuantity(branchStock.getQuantity() - item.getQuantity());
                 branchStock.setLastUpdated(LocalDateTime.now());
-                branchProductStockRepository.save(branchStock);
+                updatedBranchStocks.add(branchStock); // ✅ collect, không save ngay
             }
 
             details.add(detailBuilder.build());
@@ -289,92 +277,13 @@ class OrderServiceImpl implements OrderService {
             total = total.add(subtotal);
         }
 
-        // Batch insert order details
+        // ✅ Batch insert / update — 3 queries thay vì N
         orderDetailRepository.saveAll(details);
-
-        // Batch update product stock
         productRepository.saveAll(updatedProducts);
+        if (!updatedBranchStocks.isEmpty()) {
+            branchProductStockRepository.saveAll(updatedBranchStocks); // ✅ 1 query
+        }
 
         return total;
-    }
-
-    /**
-     * Full voucher validation and discount application:
-     * - Check voucher exists
-     * - Check expiry (validFrom / validTo)
-     * - Check usageLimit
-     * - Check UserVoucher exists and not USED
-     * - Calculate discount with RoundingMode.HALF_UP
-     * - Mark UserVoucher as USED
-     */
-    private void applyVoucherDiscount(Order order, Integer userId, String voucherCode, BigDecimal totalAmount) {
-        // Find voucher
-        Voucher voucher = voucherRepository.findByVoucherCode(voucherCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Voucher not found: " + voucherCode));
-
-        // Check expiry
-        validateVoucherExpiry(voucher);
-
-        // Check usage limit
-        if (voucher.getUsageLimit() != null) {
-            long usedCount = orderRepository.countByVoucher_VoucherId(voucher.getVoucherId());
-            if (usedCount >= voucher.getUsageLimit()) {
-                throw new ApiException("Voucher usage limit reached: " + voucherCode);
-            }
-        }
-
-        // Check UserVoucher
-        UserVoucher userVoucher = userVoucherRepository
-                .findByUser_UserIdAndVoucher_VoucherCode(userId, voucherCode)
-                .orElseThrow(() -> new ApiException("User does not have this voucher: " + voucherCode));
-
-        if (userVoucher.getStatus() == VoucherStatus.USED) {
-            throw new ApiException("Voucher already used: " + voucherCode);
-        }
-
-        // Calculate discount
-        BigDecimal discount = calculateDiscount(voucher, totalAmount);
-        BigDecimal finalAmount = totalAmount.subtract(discount);
-
-        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
-            finalAmount = BigDecimal.ZERO;
-        }
-
-        // Apply to order
-        order.setVoucher(voucher);
-        order.setTotalAmount(finalAmount);
-
-        // Mark voucher as used
-        userVoucher.setStatus(VoucherStatus.USED);
-        userVoucher.setUsedAt(LocalDateTime.now());
-        userVoucherRepository.save(userVoucher);
-
-        log.info("Voucher {} applied. Discount: {}, Final: {}", voucherCode, discount, finalAmount);
-    }
-
-    /**
-     * Validate voucher is within valid date range.
-     */
-    private void validateVoucherExpiry(Voucher voucher) {
-        LocalDateTime now = LocalDateTime.now();
-        if (voucher.getValidFrom() != null && now.isBefore(voucher.getValidFrom())) {
-            throw new ApiException("Voucher is not yet active: " + voucher.getVoucherCode());
-        }
-        if (voucher.getValidTo() != null && now.isAfter(voucher.getValidTo())) {
-            throw new ApiException("Voucher has expired: " + voucher.getVoucherCode());
-        }
-    }
-
-    /**
-     * Calculate discount amount based on discount type (PERCENTAGE or FIXED_AMOUNT).
-     * Uses RoundingMode.HALF_UP to avoid ArithmeticException.
-     */
-    private BigDecimal calculateDiscount(Voucher voucher, BigDecimal total) {
-        if ("PERCENTAGE".equalsIgnoreCase(voucher.getDiscountType())) {
-            return total.multiply(voucher.getDiscountValue())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        } else {
-            return voucher.getDiscountValue() != null ? voucher.getDiscountValue() : BigDecimal.ZERO;
-        }
     }
 }

@@ -15,8 +15,12 @@ public class VoucherResponse {
     private String description;
     private BigDecimal discountValue;
     private String discountType;
+    private BigDecimal minOrderValue;
+    private BigDecimal maxDiscount;
+    private Integer usedCount;
     private LocalDateTime validFrom;
     private LocalDateTime validTo;
     private Integer usageLimit;
+    private Boolean isActive;
     private Boolean isValid;
 }

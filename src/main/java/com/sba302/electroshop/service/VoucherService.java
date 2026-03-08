@@ -6,6 +6,11 @@ import com.sba302.electroshop.dto.response.VoucherResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.sba302.electroshop.entity.UserVoucher;
+import com.sba302.electroshop.entity.Voucher;
+
+import java.math.BigDecimal;
+
 public interface VoucherService {
 
     VoucherResponse getById(Integer id);
@@ -20,7 +25,15 @@ public interface VoucherService {
 
     void assignToUser(Integer voucherId, Integer userId);
 
+    void assignToUsers(Integer voucherId, java.util.List<Integer> userIds);
+
     boolean validateVoucher(String code, Integer userId);
+
+    UserVoucher validateAndGetVoucher(String code, Integer userId, BigDecimal orderTotal);
+
+    BigDecimal calculateDiscount(Voucher voucher, BigDecimal orderTotal);
+
+    void markVoucherAsUsed(Integer userVoucherId);
 
     void delete(Integer id);
 }

@@ -24,8 +24,14 @@ public class CreateVoucherRequest {
     private BigDecimal discountValue;
 
     @NotBlank(message = "Discount type is required")
-    @Pattern(regexp = "^(PERCENTAGE|FIXED_AMOUNT)$", message = "Discount type must be PERCENTAGE or FIXED_AMOUNT")
+    @Pattern(regexp = "^(PERCENT|FIXED)$", message = "Discount type must be PERCENT or FIXED")
     private String discountType;
+
+    @Min(value = 0, message = "Minimum order value must be non-negative")
+    private BigDecimal minOrderValue;
+
+    @Min(value = 0, message = "Maximum discount must be non-negative")
+    private BigDecimal maxDiscount;
 
     @NotNull(message = "Valid from date is required")
     private LocalDateTime validFrom;

@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/v1/vouchers")
@@ -59,11 +60,28 @@ public class VoucherController {
         return ApiResponse.success(null);
     }
 
+    @PostMapping("/{voucherId}/assign")
+    public ApiResponse<Void> assignToUsers(
+            @PathVariable Integer voucherId,
+            @RequestBody java.util.List<Integer> userIds) {
+        voucherService.assignToUsers(voucherId, userIds);
+        return ApiResponse.success(null);
+    }
+
     @GetMapping("/validate")
     public ApiResponse<Boolean> validateVoucher(
             @RequestParam String code,
             @RequestParam Integer userId) {
         return ApiResponse.success(voucherService.validateVoucher(code, userId));
+    }
+
+    @GetMapping("/validate-details")
+    public ApiResponse<VoucherResponse> validateAndGetVoucher(
+            @RequestParam String code,
+            @RequestParam Integer userId,
+            @RequestParam BigDecimal orderTotal) {
+        voucherService.validateAndGetVoucher(code, userId, orderTotal);
+        return ApiResponse.success(voucherService.getByCode(code));
     }
 
     @DeleteMapping("/{id}")

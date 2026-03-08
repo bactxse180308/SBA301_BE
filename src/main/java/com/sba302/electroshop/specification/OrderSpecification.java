@@ -11,6 +11,22 @@ import java.util.List;
 
 public class OrderSpecification {
 
+    public static Specification<Order> filterOrders(Integer userId, OrderStatus status) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (userId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("user").get("userId"), userId));
+            }
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("orderStatus"), status));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
     public static Specification<Order> hasUserAndProductDelivered(Integer userId, Integer productId) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
