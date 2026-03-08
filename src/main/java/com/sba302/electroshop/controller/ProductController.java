@@ -54,11 +54,4 @@ public class ProductController {
         return ApiResponse.success(null);
     }
 
-    @PatchMapping("/{id}/stock")
-    public ApiResponse<Void> updateStock(
-            @PathVariable Integer id,
-            @RequestParam Integer quantity) {
-        productService.updateStock(id, quantity);
-        return ApiResponse.success(null);
-    }
 }
