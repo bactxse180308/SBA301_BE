@@ -33,14 +33,14 @@ public class StoreBranchController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<StoreBranchResponse> create(@Valid @RequestBody CreateStoreBranchRequest request) {
         return ApiResponse.success(storeBranchService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<StoreBranchResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody CreateStoreBranchRequest request) {
@@ -48,7 +48,7 @@ public class StoreBranchController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         storeBranchService.delete(id);
@@ -63,7 +63,7 @@ public class StoreBranchController {
     }
 
     @PatchMapping("/{branchId}/products/{productId}/stock")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> updateStock(
             @PathVariable Integer branchId,
             @PathVariable Integer productId,

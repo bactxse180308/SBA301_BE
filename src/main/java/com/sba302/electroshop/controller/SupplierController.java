@@ -59,7 +59,7 @@ public class SupplierController {
     }
 
     @GetMapping("/{supplierId}/products")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Page<ProductResponse>> getProductsBySupplierId(
             @PathVariable Integer supplierId,
             @PageableDefault(size = 20) Pageable pageable) {
