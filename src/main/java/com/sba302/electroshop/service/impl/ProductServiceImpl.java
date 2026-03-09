@@ -12,6 +12,7 @@ import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.repository.BranchProductStockRepository;
 import com.sba302.electroshop.repository.SupplierRepository;
 import com.sba302.electroshop.service.ProductService;
+import com.sba302.electroshop.service.StoreBranchService;
 import com.sba302.electroshop.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ class ProductServiceImpl implements ProductService {
     private final SupplierRepository supplierRepository;
     private final BranchProductStockRepository branchProductStockRepository;
     private final ProductMapper productMapper;
+    private final StoreBranchService storeBranchService;
 
     @Override
     public ProductResponse getById(Integer id) {

@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,7 +37,6 @@ class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final BranchProductStockRepository branchProductStockRepository;
-    private final StoreBranchRepository storeBranchRepository;
     private final OrderMapper orderMapper;
     private final VoucherService voucherService;
 
@@ -180,26 +178,15 @@ class OrderServiceImpl implements OrderService {
 
     private record OrderValidationContext(
             Map<Integer, Product> productMap,
-            Map<Integer, StoreBranch> branchMap,
-            Map<String, BranchProductStock> branchStockMap
+            Map<Integer, BranchProductStock> selectedStockMap // productId -> selected BranchProductStock
     ) {}
 
     /**
-     * Batch fetch all products, branches, and stocks in 1-2 queries each, then validate each one:
-     * - Must exist
-     * - Status must be AVAILABLE
-     * - Price must be valid (not null, > 0)
-     * - Stock must be sufficient (main and branch if applicable)
+     * Batch fetch all products and their available stocks, then for each item find a branch with sufficient stock.
      */
     private OrderValidationContext fetchAndValidateProducts(List<CreateOrderRequest.OrderItemRequest> items) {
         List<Integer> productIds = items.stream()
                 .map(CreateOrderRequest.OrderItemRequest::getProductId)
-                .distinct()
-                .toList();
-
-        List<Integer> branchIds = items.stream()
-                .map(CreateOrderRequest.OrderItemRequest::getBranchId)
-                .filter(Objects::nonNull)
                 .distinct()
                 .toList();
 
@@ -208,28 +195,32 @@ class OrderServiceImpl implements OrderService {
                 .stream()
                 .collect(Collectors.toMap(Product::getProductId, Function.identity()));
 
-        // 1 query for Branches if needed
-        Map<Integer, StoreBranch> branchMap = branchIds.isEmpty() ? Collections.emptyMap() :
-                storeBranchRepository.findAllById(branchIds)
-                        .stream()
-                        .collect(Collectors.toMap(StoreBranch::getBranchId, Function.identity()));
+        // 1 query for ALL available stocks for these products
+        List<BranchProductStock> allStocks = branchProductStockRepository.findAllByProductIds(productIds);
 
-        // 1 query for Branch Stocks if needed
-        Map<String, BranchProductStock> branchStockMap = branchIds.isEmpty() ? Collections.emptyMap() :
-                branchProductStockRepository.findAllByBranchIdsAndProductIds(branchIds, productIds)
-                        .stream()
-                        .collect(Collectors.toMap(
-                                bps -> bps.getBranch().getBranchId() + "_" + bps.getProduct().getProductId(),
-                                Function.identity()
-                        ));
+        // Group stocks by productId
+        Map<Integer, List<BranchProductStock>> stocksByProduct = allStocks.stream()
+                .collect(Collectors.groupingBy(bps -> bps.getProduct().getProductId()));
+
+        Map<Integer, BranchProductStock> selectedStockMap = new HashMap<>();
 
         for (var item : items) {
             Product product = productMap.get(item.getProductId());
             validateProductBasics(product, item.getProductId());
-            validateBranchInventory(item, product, branchMap, branchStockMap);
+
+            // Find best branch for this product
+            List<BranchProductStock> availableStocks = stocksByProduct.getOrDefault(item.getProductId(), Collections.emptyList());
+
+            BranchProductStock selectedStock = availableStocks.stream()
+                    .filter(stock -> stock.getQuantity() >= item.getQuantity())
+                    .max(Comparator.comparingInt(BranchProductStock::getQuantity)) // Pick branch with most stock
+                    .orElseThrow(() -> new ApiException("Insufficient stock for product: " + product.getProductName()
+                            + ". No branch has " + item.getQuantity() + " units available."));
+
+            selectedStockMap.put(item.getProductId(), selectedStock);
         }
 
-        return new OrderValidationContext(productMap, branchMap, branchStockMap);
+        return new OrderValidationContext(productMap, selectedStockMap);
     }
 
     private void validateProductBasics(Product product, Integer productId) {
@@ -242,34 +233,6 @@ class OrderServiceImpl implements OrderService {
         }
         if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new ApiException("Product price is invalid: " + product.getProductName());
-        }
-    }
-
-    private void validateBranchInventory(CreateOrderRequest.OrderItemRequest item,
-                                       Product product,
-                                       Map<Integer, StoreBranch> branchMap,
-                                       Map<String, BranchProductStock> branchStockMap) {
-        if (item.getBranchId() == null) {
-            throw new ApiException("Branch ID is required for product: " + product.getProductName());
-        }
-
-        StoreBranch branch = branchMap.get(item.getBranchId());
-        if (branch == null) {
-            throw new ResourceNotFoundException("Store branch not found with id: " + item.getBranchId());
-        }
-
-        String key = item.getBranchId() + "_" + item.getProductId();
-        BranchProductStock branchStock = branchStockMap.get(key);
-
-        if (branchStock == null) {
-            throw new ApiException("Product not available at branch: " + item.getBranchId());
-        }
-
-        if (branchStock.getQuantity() < item.getQuantity()) {
-            throw new ApiException("Insufficient branch stock for product: " + product.getProductName()
-                    + " at branch " + item.getBranchId()
-                    + " (available: " + branchStock.getQuantity()
-                    + ", requested: " + item.getQuantity() + ")");
         }
     }
 
@@ -286,29 +249,25 @@ class OrderServiceImpl implements OrderService {
 
         for (var item : items) {
             Product product = validationContext.productMap().get(item.getProductId());
+            BranchProductStock branchStock = validationContext.selectedStockMap().get(item.getProductId());
 
             BigDecimal subtotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(item.getQuantity()));
 
-            OrderDetail.OrderDetailBuilder detailBuilder = OrderDetail.builder()
+            OrderDetail detail = OrderDetail.builder()
                     .order(order)
                     .product(product)
+                    .branch(branchStock.getBranch())
                     .quantity(item.getQuantity())
                     .unitPrice(product.getPrice())
-                    .subtotal(subtotal);
-
-            // Resolve branch (Enforced in validation)
-            StoreBranch branch = validationContext.branchMap().get(item.getBranchId());
-            detailBuilder.branch(branch);
-
-            String key = item.getBranchId() + "_" + item.getProductId();
-            BranchProductStock branchStock = validationContext.branchStockMap().get(key);
+                    .subtotal(subtotal)
+                    .build();
 
             branchStock.setQuantity(branchStock.getQuantity() - item.getQuantity());
             branchStock.setLastUpdated(LocalDateTime.now());
             updatedBranchStocks.add(branchStock);
 
-            details.add(detailBuilder.build());
+            details.add(detail);
             total = total.add(subtotal);
         }
 

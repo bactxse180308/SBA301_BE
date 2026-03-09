@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/branches")
 @RequiredArgsConstructor
@@ -23,6 +25,11 @@ public class StoreBranchController {
     @GetMapping("/{id}")
     public ApiResponse<StoreBranchResponse> getById(@PathVariable Integer id) {
         return ApiResponse.success(storeBranchService.getById(id));
+    }
+
+    @GetMapping("/all")
+    public ApiResponse<List<StoreBranchResponse>> getAll() {
+        return ApiResponse.success(storeBranchService.getAll());
     }
 
     @GetMapping

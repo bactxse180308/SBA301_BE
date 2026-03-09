@@ -34,6 +34,13 @@ public class ProductController {
         return ApiResponse.success(productService.search(keyword, categoryId, brandId, pageable));
     }
 
+    @GetMapping("/search")
+    public ApiResponse<Page<ProductResponse>> searchEndpoint(
+            @RequestParam(value = "q", required = false) String q,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.success(productService.search(q, null, null, pageable));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {

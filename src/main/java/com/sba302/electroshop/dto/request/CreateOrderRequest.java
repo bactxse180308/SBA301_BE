@@ -39,7 +39,5 @@ public class CreateOrderRequest {
         @Min(value = 1, message = "Quantity must be at least 1")
         @Max(value = 9999, message = "Quantity must not exceed 9999")
         private Integer quantity;
-
-        private Integer branchId;
     }
 }
