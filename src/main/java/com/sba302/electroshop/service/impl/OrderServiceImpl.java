@@ -99,9 +99,9 @@ class OrderServiceImpl implements OrderService {
 
             BigDecimal finalAmount = totalAmount.subtract(discount).max(BigDecimal.ZERO);
 
-            order.setTotalAmount(totalAmount);       // ✅ tổng gốc trước giảm
-            order.setDiscountAmount(discount);        // ✅ snapshot discount
-            order.setFinalAmount(finalAmount);        // ✅ thực tế thanh toán
+            order.setTotalAmount(totalAmount);
+            order.setDiscountAmount(discount);
+            order.setFinalAmount(finalAmount);
             order.setUserVoucher(userVoucher);
 
             voucherService.markVoucherAsUsed(userVoucher.getUserVoucherId());

@@ -30,6 +30,7 @@
         <java.version>17</java.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct.version>0.2.0</lombok-mapstruct.version>
+        <aws-s3-sdk.version>2.42.8</aws-s3-sdk.version>
     </properties>
     <dependencies>
         <dependency>
@@ -166,6 +167,17 @@
             <version>2.2.0</version>
         </dependency>
 
+        <!-- AWS S3 SDK (Cloudflare R2 Compatible) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws-s3-sdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.18.3</version>
+        </dependency>
     </dependencies>
 
     <build>

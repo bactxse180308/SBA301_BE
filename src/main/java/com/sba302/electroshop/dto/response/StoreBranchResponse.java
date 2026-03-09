@@ -13,4 +13,7 @@ public class StoreBranchResponse {
     private String location;
     private String managerName;
     private String contactNumber;
+    private String address;
+    private String workingHours;
+    private String mapsUrl;
 }

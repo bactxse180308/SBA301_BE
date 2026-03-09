@@ -30,6 +30,17 @@ public class StoreBranch {
     @Column(name = "manager_name")
     private String managerName;
 
+    @Nationalized
     @Column(name = "contact_number", length = 50)
     private String contactNumber;
+
+    @Nationalized
+    @Column(name = "address", length = 500)
+    private String address;
+
+    @Column(name = "working_hours", length = 200)
+    private String workingHours;
+
+    @Column(name = "maps_url", length = 1000)
+    private String mapsUrl;
 }

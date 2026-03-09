@@ -29,8 +29,6 @@ public class Product {
     @Column(name = "description", length = 2000)
     private String description;
 
-
-
     @Column(name = "price")
     private BigDecimal price;
 
@@ -52,4 +50,29 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id", nullable = false)
     private Supplier supplier;
+
+    @Column(name = "original_price")
+    private BigDecimal originalPrice;
+
+    @Column(name = "discount_percent")
+    private Integer discountPercent;
+
+    @Builder.Default
+    @Column(name = "rating")
+    private Double rating = 0.0;
+
+    @Builder.Default
+    @Column(name = "sold_count")
+    private Integer soldCount = 0;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<Media> mediaItems = new java.util.ArrayList<>();
+
+    @Nationalized
+    @Column(name = "description_details", columnDefinition = "NVARCHAR(MAX)")
+    private String descriptionDetails;
+
+    @Column(name = "main_image", length = 1000)
+    private String mainImage;
 }

@@ -12,10 +12,11 @@ import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.repository.BranchProductStockRepository;
 import com.sba302.electroshop.repository.SupplierRepository;
 import com.sba302.electroshop.service.ProductService;
-import com.sba302.electroshop.service.StoreBranchService;
 import com.sba302.electroshop.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -39,7 +40,6 @@ class ProductServiceImpl implements ProductService {
     private final SupplierRepository supplierRepository;
     private final BranchProductStockRepository branchProductStockRepository;
     private final ProductMapper productMapper;
-    private final StoreBranchService storeBranchService;
 
     @Override
     public ProductResponse getById(Integer id) {
@@ -71,6 +71,7 @@ class ProductServiceImpl implements ProductService {
         return productPage.map(product -> {
             ProductResponse response = productMapper.toResponse(product);
             response.setQuantity(stockMap.getOrDefault(product.getProductId(), 0));
+            response.setDescriptionDetails(null); // Save bandwidth
             return response;
         });
     }
@@ -80,6 +81,7 @@ class ProductServiceImpl implements ProductService {
     public ProductResponse create(CreateProductRequest request) {
         log.info("Creating product: {}", request.getProductName());
 
+        sanitizeDescriptionDetails(request);
         Product product = productMapper.toEntity(request);
         product.setCreatedDate(LocalDateTime.now());
 
@@ -98,6 +100,10 @@ class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + request.getSupplierId())));
         }
 
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            product.setMainImage(request.getImageUrls().get(0));
+        }
+
         product = productRepository.save(product);
         return productMapper.toResponse(product);
     }
@@ -107,6 +113,7 @@ class ProductServiceImpl implements ProductService {
     public ProductResponse update(Integer id, UpdateProductRequest request) {
         log.info("Updating product id={}", id);
 
+        sanitizeDescriptionDetails(request);
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
@@ -127,6 +134,10 @@ class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + request.getSupplierId())));
         }
 
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            product.setMainImage(request.getImageUrls().get(0));
+        }
+
         product = productRepository.save(product);
         return productMapper.toResponse(product);
     }
@@ -141,4 +152,15 @@ class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
     }
 
+    private void sanitizeDescriptionDetails(CreateProductRequest request) {
+        if (request.getDescriptionDetails() != null) {
+            request.setDescriptionDetails(Jsoup.clean(request.getDescriptionDetails(), Safelist.relaxed()));
+        }
+    }
+
+    private void sanitizeDescriptionDetails(UpdateProductRequest request) {
+        if (request.getDescriptionDetails() != null) {
+            request.setDescriptionDetails(Jsoup.clean(request.getDescriptionDetails(), Safelist.relaxed()));
+        }
+    }
 }

@@ -29,4 +29,12 @@ public class UpdateProductRequest {
     private String status;
 
     private Integer supplierId;
+
+    private BigDecimal originalPrice;
+
+    private Integer discountPercent;
+
+    private String descriptionDetails;
+
+    private java.util.List<String> imageUrls;
 }

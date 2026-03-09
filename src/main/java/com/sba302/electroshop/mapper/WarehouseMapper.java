@@ -14,6 +14,10 @@ public interface WarehouseMapper {
     @Mapping(source = "product.productName", target = "productName")
     @Mapping(source = "branch.branchId", target = "branchId")
     @Mapping(source = "branch.branchName", target = "branchName")
+    @Mapping(source = "product.brand.brandName", target = "brandName")
+    @Mapping(source = "product.category.categoryName", target = "categoryName")
+    @Mapping(source = "product.supplier.supplierName", target = "supplierName")
+    @Mapping(source = "product.status", target = "status")
     StockItemResponse toStockItemResponse(BranchProductStock stock);
 
     @Mapping(source = "product.productId", target = "productId")
