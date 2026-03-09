@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -31,4 +32,12 @@ public class CreateProductRequest {
     private Integer supplierId;
 
     private String status;
+
+    private BigDecimal originalPrice;
+
+    private Integer discountPercent;
+
+    private String descriptionDetails;
+
+    private List<String> imageUrls;
 }

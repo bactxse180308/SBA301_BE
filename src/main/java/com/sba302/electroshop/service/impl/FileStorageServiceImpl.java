@@ -1,5 +1,6 @@
 package com.sba302.electroshop.service.impl;
 
+import com.sba302.electroshop.enums.FileType;
 import com.sba302.electroshop.exception.ApiException;
 import com.sba302.electroshop.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +15,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
-@Service
+@Service("localStorage")
 public class FileStorageServiceImpl implements FileStorageService {
 
     private final Path fileStorageLocation;
@@ -29,7 +30,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
-    public String storeFile(MultipartFile file) {
+    public String storeFile(MultipartFile file, FileType type) {
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         try {
             if (originalFileName.contains("..")) {
@@ -43,22 +44,33 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
             
             String newFileName = UUID.randomUUID().toString() + fileExtension;
-            Path targetLocation = this.fileStorageLocation.resolve(newFileName);
+            Path targetLocation = this.fileStorageLocation.resolve(type.getFolderName()).resolve(newFileName);
+            Files.createDirectories(targetLocation.getParent());
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            return newFileName;
+            return type.getFolderName() + "/" + newFileName;
         } catch (IOException ex) {
             throw new ApiException("Could not store file " + originalFileName + ". Please try again!");
         }
     }
 
     @Override
-    public void deleteFile(String fileName) {
+    public void deleteFile(String fileName, FileType type) {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName);
             Files.deleteIfExists(filePath);
         } catch (IOException ex) {
             // Log warning
         }
+    }
+
+    @Override
+    public String getUploadPresignedUrl(String fileName, FileType type) {
+        return null; // Local storage doesn't support presigned URLs
+    }
+
+    @Override
+    public String getDownloadPresignedUrl(String fileName, FileType type) {
+        return null; // Local storage doesn't support presigned URLs
     }
 }

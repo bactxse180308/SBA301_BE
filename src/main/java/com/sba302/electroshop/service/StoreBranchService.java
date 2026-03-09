@@ -9,8 +9,6 @@ public interface StoreBranchService {
 
     StoreBranchResponse getById(Integer id);
 
-    java.util.List<StoreBranchResponse> getAll();
-
     Page<StoreBranchResponse> search(String keyword, Pageable pageable);
 
     StoreBranchResponse create(CreateStoreBranchRequest request);

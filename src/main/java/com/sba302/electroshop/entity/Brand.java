@@ -28,4 +28,13 @@ public class Brand {
     @Nationalized
     @Column(name = "description", length = 1000)
     private String description;
+
+    @Column(name = "logo_url")
+    private String logoUrl;
+
+    @Column(name = "is_partner")
+    private Boolean isPartner;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 }

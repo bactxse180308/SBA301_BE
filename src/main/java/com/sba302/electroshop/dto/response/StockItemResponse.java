@@ -13,4 +13,8 @@ public class StockItemResponse {
     private Integer quantity;
     private Integer branchId;
     private String branchName;
+    private String brandName;
+    private String categoryName;
+    private String supplierName;
+    private String status;
 }

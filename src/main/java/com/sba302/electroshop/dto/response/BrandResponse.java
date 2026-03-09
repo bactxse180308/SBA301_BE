@@ -12,4 +12,7 @@ public class BrandResponse {
     private String brandName;
     private String country;
     private String description;
+    private String logoUrl;
+    private Boolean isPartner;
+    private String imageUrl;
 }

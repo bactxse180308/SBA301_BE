@@ -25,4 +25,7 @@ public class Category {
     @Nationalized
     @Column(name = "description", length = 1000)
     private String description;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 }

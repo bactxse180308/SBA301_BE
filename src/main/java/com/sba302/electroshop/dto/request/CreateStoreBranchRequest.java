@@ -21,4 +21,13 @@ public class CreateStoreBranchRequest {
 
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Contact number must be 10-15 digits")
     private String contactNumber;
+
+    @Size(max = 500, message = "Address must not exceed 500 characters")
+    private String address;
+
+    @Size(max = 200, message = "Working hours must not exceed 200 characters")
+    private String workingHours;
+
+    @Size(max = 1000, message = "Maps URL must not exceed 1000 characters")
+    private String mapsUrl;
 }

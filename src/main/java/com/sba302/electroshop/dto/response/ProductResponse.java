@@ -22,4 +22,11 @@ public class ProductResponse {
     private LocalDateTime createdDate;
     private Integer supplierId;
     private String supplierName;
+    private BigDecimal originalPrice;
+    private Integer discountPercent;
+    private Double rating;
+    private Integer soldCount;
+    private String descriptionDetails;
+    private String mainImage;
+    private java.util.List<String> imageUrls;
 }

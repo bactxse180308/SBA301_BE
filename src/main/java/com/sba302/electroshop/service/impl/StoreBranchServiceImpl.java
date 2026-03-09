@@ -41,14 +41,6 @@ class StoreBranchServiceImpl implements StoreBranchService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<StoreBranchResponse> getAll() {
-        return storeBranchRepository.findAll().stream()
-                .map(storeBranchMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Page<StoreBranchResponse> search(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
             return storeBranchRepository.findAll(pageable)
