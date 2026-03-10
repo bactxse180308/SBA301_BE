@@ -3,6 +3,7 @@ package com.sba302.electroshop.dto.response;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,8 +16,11 @@ public class OrderResponse {
     private String userFullName;
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;
+    private BigDecimal discountAmount;
+    private BigDecimal finalAmount;
     private String orderStatus;
     private String shippingAddress;
     private String paymentMethod;
     private String voucherCode;
+    private List<OrderItemResponse> orderItems;
 }

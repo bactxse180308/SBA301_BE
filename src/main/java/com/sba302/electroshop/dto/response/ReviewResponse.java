@@ -1,7 +1,12 @@
 package com.sba302.electroshop.dto.response;
 
-import lombok.*;
 import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -17,4 +22,8 @@ public class ReviewResponse {
     private Integer rating;
     private String comment;
     private LocalDateTime reviewDate;
+    private String replyComment;
+    private LocalDateTime replyDate;
+    private Integer repliedByUserId;
+    private String repliedByFullName;
 }

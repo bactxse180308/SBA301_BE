@@ -7,14 +7,17 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sba302.electroshop.entity.Order;
+import com.sba302.electroshop.enums.OrderStatus;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpecificationExecutor<Order> {
     @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END " +
-           "FROM Order o JOIN OrderDetail od ON o.orderId = od.order.orderId " +
+           "FROM Order o JOIN o.orderDetails od " +
            "WHERE o.user.userId = :userId AND od.product.productId = :productId " +
-           "AND o.orderStatus = 'DELIVERED'")
-    boolean hasUserPurchasedProduct(@Param("userId") Integer userId, @Param("productId") Integer productId);
+           "AND o.orderStatus = :status")
+    boolean hasUserPurchasedProduct(@Param("userId") Integer userId,
+                                    @Param("productId") Integer productId,
+                                    @Param("status") OrderStatus status);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.orderDate >= :startOfDay AND o.orderDate < :endOfDay")
     Integer countOrdersByDateRange(@Param("startOfDay") java.time.LocalDateTime startOfDay, @Param("endOfDay") java.time.LocalDateTime endOfDay);
