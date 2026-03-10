@@ -3,6 +3,7 @@ package com.sba302.electroshop.service.impl;
 import com.sba302.electroshop.dto.request.CreateOrderRequest;
 import com.sba302.electroshop.dto.response.OrderResponse;
 import com.sba302.electroshop.entity.*;
+import com.sba302.electroshop.entity.OrderDetail;
 import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.enums.ProductStatus;
 import com.sba302.electroshop.enums.UserStatus;
@@ -49,6 +50,9 @@ class OrderServiceImpl implements OrderService {
     public OrderResponse getById(Integer id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+        // Fetch order details (products) kèm theo
+        List<OrderDetail> details = orderDetailRepository.findByOrderId(id);
+        order.setOrderDetails(details);
         return orderMapper.toResponse(order);
     }
 
