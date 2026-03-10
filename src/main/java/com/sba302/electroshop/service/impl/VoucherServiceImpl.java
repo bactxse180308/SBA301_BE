@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -64,6 +63,12 @@ class VoucherServiceImpl implements VoucherService {
         Page<Voucher> page = voucherRepository.findAll(pageable);
 
         return page.map(voucherMapper::toResponse);
+    }
+
+    @Override
+    public Page<VoucherResponse> getVouchersByUserId(Integer userId, Pageable pageable) {
+        return userVoucherRepository.findByUserId(userId, pageable)
+                .map(voucherMapper::toResponse);
     }
 
     @Override

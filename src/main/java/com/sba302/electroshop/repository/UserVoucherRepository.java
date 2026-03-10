@@ -24,4 +24,7 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucher, Intege
             @Param("voucherId") Integer voucherId,
             @Param("userIds") List<Integer> userIds
     );
+
+    @Query("SELECT uv FROM UserVoucher uv JOIN FETCH uv.voucher WHERE uv.user.userId = :userId")
+    org.springframework.data.domain.Page<UserVoucher> findByUserId(@Param("userId") Integer userId, org.springframework.data.domain.Pageable pageable);
 }
