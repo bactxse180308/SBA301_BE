@@ -41,17 +41,18 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "Get user by ID", description = "Retrieve user details by user ID (Admin only)")
+    @Operation(summary = "Get user by ID", description = "Retrieve user details by user ID (Admin or User themselves)")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.toString() == #id.toString()")
     @GetMapping("/{id}")
     public ApiResponse<UserResponse> getById(@PathVariable Integer id) {
         return ApiResponse.success(userService.getById(id));
     }
 
-    @Operation(summary = "Get user by email", description = "Retrieve user details by email address (Admin only)")
-    @GetMapping("/email/{email}")
-    public ApiResponse<UserResponse> getByEmail(@PathVariable String email) {
-        return ApiResponse.success(userService.getByEmail(email));
-    }
+//    @Operation(summary = "Get user by email", description = "Retrieve user details by email address (Admin only)")
+//    @GetMapping("/email/{email}")
+//    public ApiResponse<UserResponse> getByEmail(@PathVariable String email) {
+//        return ApiResponse.success(userService.getByEmail(email));
+//    }
 
     @Operation(summary = "Search users", description = "Search users with optional filters: email, phoneNumber and status (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")

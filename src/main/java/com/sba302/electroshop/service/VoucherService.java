@@ -19,6 +19,8 @@ public interface VoucherService {
 
     Page<VoucherResponse> search(String keyword, Boolean validOnly, Pageable pageable);
 
+    Page<VoucherResponse> getVouchersByUserId(Integer userId, Pageable pageable);
+
     VoucherResponse create(CreateVoucherRequest request);
 
     VoucherResponse update(Integer id, UpdateVoucherRequest request);
