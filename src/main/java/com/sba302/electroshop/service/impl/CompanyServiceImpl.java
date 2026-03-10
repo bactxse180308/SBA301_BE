@@ -8,7 +8,6 @@ import com.sba302.electroshop.entity.Company;
 import com.sba302.electroshop.entity.Role;
 import com.sba302.electroshop.entity.User;
 import com.sba302.electroshop.enums.CompanyStatus;
-import com.sba302.electroshop.enums.UserStatus;
 import com.sba302.electroshop.exception.ResourceConflictException;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.CompanyMapper;
