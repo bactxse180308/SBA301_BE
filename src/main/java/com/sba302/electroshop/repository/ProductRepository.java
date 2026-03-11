@@ -16,6 +16,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(p) FROM Product p WHERE p.status = 'ACTIVE'")
     Integer countActiveProducts();
 
-    @EntityGraph(attributePaths = {"category", "brand", "supplier"})
+    @EntityGraph(attributePaths = {"category", "brand", "supplier", "mediaItems"})
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 }
