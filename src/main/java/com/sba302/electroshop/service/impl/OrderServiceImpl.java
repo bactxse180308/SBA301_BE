@@ -3,6 +3,7 @@ package com.sba302.electroshop.service.impl;
 import com.sba302.electroshop.dto.request.CreateOrderRequest;
 import com.sba302.electroshop.dto.response.OrderResponse;
 import com.sba302.electroshop.entity.*;
+import com.sba302.electroshop.entity.OrderDetail;
 import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.enums.ProductStatus;
 import com.sba302.electroshop.enums.UserStatus;
@@ -49,6 +50,9 @@ class OrderServiceImpl implements OrderService {
     public OrderResponse getById(Integer id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+        // Fetch order details (products) kèm theo
+        List<OrderDetail> details = orderDetailRepository.findByOrderId(id);
+        order.setOrderDetails(details);
         return orderMapper.toResponse(order);
     }
 
@@ -246,6 +250,7 @@ class OrderServiceImpl implements OrderService {
         BigDecimal total = BigDecimal.ZERO;
         List<OrderDetail> details = new ArrayList<>();
         List<BranchProductStock> updatedBranchStocks = new ArrayList<>();
+        List<Product> updatedProducts = new ArrayList<>();
 
         for (var item : items) {
             Product product = validationContext.productMap().get(item.getProductId());
@@ -263,9 +268,14 @@ class OrderServiceImpl implements OrderService {
                     .subtotal(subtotal)
                     .build();
 
+            // 1. Deduct branch stock
             branchStock.setQuantity(branchStock.getQuantity() - item.getQuantity());
             branchStock.setLastUpdated(LocalDateTime.now());
             updatedBranchStocks.add(branchStock);
+
+            // 2. Increment product soldCount
+            product.setSoldCount(product.getSoldCount() + item.getQuantity());
+            updatedProducts.add(product);
 
             details.add(detail);
             total = total.add(subtotal);
@@ -276,7 +286,11 @@ class OrderServiceImpl implements OrderService {
         if (!updatedBranchStocks.isEmpty()) {
             branchProductStockRepository.saveAll(updatedBranchStocks);
         }
+        if (!updatedProducts.isEmpty()) {
+            productRepository.saveAll(updatedProducts);
+        }
 
         return total;
     }
+
 }

@@ -3,6 +3,7 @@ package com.sba302.electroshop.entity;
 import com.sba302.electroshop.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Nationalized;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -67,6 +68,7 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @BatchSize(size = 20)
     private java.util.List<Media> mediaItems = new java.util.ArrayList<>();
 
     @Nationalized

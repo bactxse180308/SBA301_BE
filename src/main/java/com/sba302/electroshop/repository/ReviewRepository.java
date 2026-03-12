@@ -21,4 +21,10 @@ public interface ReviewRepository extends JpaRepository<Review, Integer>, JpaSpe
            "OR LOWER(r.product.productName) LIKE :keyword " +
            "OR LOWER(r.user.fullName) LIKE :keyword")
     List<Review> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.product.productId = :productId")
+    Long countByProductId(@Param("productId") Integer productId);
+
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.product.productId = :productId AND r.rating = :rating")
+    Long countByProductIdAndRating(@Param("productId") Integer productId, @Param("rating") Integer rating);
 }

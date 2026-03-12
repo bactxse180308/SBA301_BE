@@ -34,14 +34,18 @@ class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse getById(Integer id) {
-        // TODO: Implement - find by id, map to response
-        return null;
+        log.info("Getting user by id: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+        return userMapper.toResponse(user);
     }
 
     @Override
     public UserResponse getByEmail(String email) {
-        // TODO: Implement - find by email, map to response
-        return null;
+        log.info("Getting user by email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -99,25 +103,51 @@ class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse update(Integer id, UpdateUserRequest request) {
-        // TODO: Implement - find, update entity, save
-        return null;
+        log.info("Updating user with id: {}", id);
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+
+        // Use mapper to update entity
+        userMapper.updateEntity(user, request);
+
+        // Save and return
+        user = userRepository.save(user);
+        log.info("User updated successfully with id: {}", id);
+
+        return userMapper.toResponse(user);
     }
 
     @Override
     @Transactional
     public void updateStatus(Integer id, UserStatus status) {
-        // TODO: Implement - update user status
+        log.info("Updating status for user id: {} to {}", id, status);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+        
+        user.setStatus(status);
+        userRepository.save(user);
     }
 
     @Override
     @Transactional
     public void addRewardPoints(Integer userId, Integer points) {
-        // TODO: Implement - add reward points to user
+        log.info("Adding {} points to user id: {}", points, userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+        int currentPoints = user.getRewardPoint() != null ? user.getRewardPoint() : 0;
+        user.setRewardPoint(currentPoints + points);
+        userRepository.save(user);
     }
 
     @Override
     @Transactional
     public void delete(Integer id) {
-        // TODO: Implement - delete user by id
+        log.info("Deleting user with id: {}", id);
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("User not found: " + id);
+        }
+        userRepository.deleteById(id);
     }
 }

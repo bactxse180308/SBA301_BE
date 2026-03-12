@@ -23,4 +23,5 @@ public class VoucherResponse {
     private Integer usageLimit;
     private Boolean isActive;
     private Boolean isValid;
+    private String userStatus;
 }

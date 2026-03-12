@@ -2,12 +2,21 @@ package com.sba302.electroshop.repository;
 
 import com.sba302.electroshop.entity.OrderDetail;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface OrderDetailRepository extends JpaRepository<OrderDetail, Integer> {
+
+    @Query("SELECT od FROM OrderDetail od " +
+           "JOIN FETCH od.product p " +
+           "LEFT JOIN FETCH od.branch b " +
+           "WHERE od.order.orderId = :orderId")
+    List<OrderDetail> findByOrderId(@Param("orderId") Integer orderId);
+
     @org.springframework.data.jpa.repository.Query("SELECT od.product.productName as product, SUM(od.quantity) as sales " +
             "FROM OrderDetail od " +
             "WHERE od.order.orderDate >= :start AND od.order.orderDate <= :end " +
