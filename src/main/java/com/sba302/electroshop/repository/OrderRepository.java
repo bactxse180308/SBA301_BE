@@ -1,5 +1,6 @@
 package com.sba302.electroshop.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -8,8 +9,15 @@ import org.springframework.stereotype.Repository;
 
 import com.sba302.electroshop.entity.Order;
 
+import java.util.List;
+
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpecificationExecutor<Order> {
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.user LEFT JOIN FETCH o.userVoucher uv LEFT JOIN FETCH uv.voucher " +
+           "WHERE LOWER(o.user.fullName) LIKE :keyword " +
+           "OR LOWER(o.shippingAddress) LIKE :keyword")
+    List<Order> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
     @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END " +
            "FROM Order o JOIN OrderDetail od ON o.orderId = od.order.orderId " +
            "WHERE o.user.userId = :userId AND od.product.productId = :productId " +

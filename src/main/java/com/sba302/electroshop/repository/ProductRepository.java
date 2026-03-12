@@ -7,7 +7,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer>, JpaSpecificationExecutor<Product> {
@@ -18,4 +22,12 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
 
     @EntityGraph(attributePaths = {"category", "brand", "supplier"})
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.brand LEFT JOIN FETCH p.supplier " +
+           "WHERE LOWER(p.productName) LIKE :keyword OR LOWER(p.description) LIKE :keyword")
+    List<Product> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM Product p " +
+           "WHERE LOWER(p.productName) LIKE :keyword OR LOWER(p.description) LIKE :keyword")
+    long countSearchByKeyword(@Param("keyword") String keyword);
 }
