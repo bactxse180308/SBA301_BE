@@ -9,4 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
     Page<Category> findByCategoryNameContainingIgnoreCase(String keyword, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT c FROM Category c WHERE LOWER(c.categoryName) LIKE :keyword")
+    java.util.List<Category> searchByKeyword(@org.springframework.data.repository.query.Param("keyword") String keyword, Pageable pageable);
 }

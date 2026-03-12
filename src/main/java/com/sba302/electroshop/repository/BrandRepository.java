@@ -9,4 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BrandRepository extends JpaRepository<Brand, Integer> {
     Page<Brand> findByBrandNameContainingIgnoreCase(String keyword, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT b FROM Brand b WHERE LOWER(b.brandName) LIKE :keyword")
+    java.util.List<Brand> searchByKeyword(@org.springframework.data.repository.query.Param("keyword") String keyword, Pageable pageable);
 }
