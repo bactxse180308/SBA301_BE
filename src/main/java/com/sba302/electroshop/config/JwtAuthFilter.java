@@ -32,7 +32,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         // Public endpoints của service này (nếu có), + swagger
-        if (path.startsWith("/api/v1/auth/login")
+        if (path.startsWith("/api/public")
+                || path.startsWith("/api/v1/auth/login")
                 || path.startsWith("/api/v1/auth/register")
                 || path.startsWith("/api/v1/auth/forgot-password")
                 || path.startsWith("/api/v1/auth/reset-password")
