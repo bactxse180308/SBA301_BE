@@ -78,6 +78,7 @@ class VoucherServiceImpl implements VoucherService {
         Voucher voucher = voucherMapper.toEntity(request);
         voucher.setUsedCount(0);
         voucher.setIsActive(true);
+        voucher.setIsValid(true);
 
         voucherRepository.save(voucher);
 
@@ -127,6 +128,9 @@ class VoucherServiceImpl implements VoucherService {
 
         if (!Boolean.TRUE.equals(voucher.getIsActive())) {
             throw new ApiException("Voucher is not active");
+        }
+        if (!Boolean.TRUE.equals(voucher.getIsValid())) {
+            throw new ApiException("Voucher is currently invalid");
         }
         if (voucher.getValidTo() != null && LocalDateTime.now().isAfter(voucher.getValidTo())) {
             throw new ApiException("Voucher đã hết hạn");
@@ -200,6 +204,10 @@ class VoucherServiceImpl implements VoucherService {
             throw new IllegalArgumentException("Voucher is inactive.");
         }
 
+        if (Boolean.FALSE.equals(voucher.getIsValid())) {
+            throw new IllegalArgumentException("Voucher is currently invalid.");
+        }
+
         LocalDateTime now = LocalDateTime.now();
         if (voucher.getValidFrom() != null && now.isBefore(voucher.getValidFrom())) {
             throw new IllegalArgumentException("Voucher is not yet valid.");
@@ -265,6 +273,28 @@ class VoucherServiceImpl implements VoucherService {
              voucher.setUsedCount(voucher.getUsedCount() + 1);
         }
         voucherRepository.save(voucher);
+    }
+
+    @Override
+    @Transactional
+    public void releaseVoucher(Integer userVoucherId) {
+        UserVoucher userVoucher = userVoucherRepository.findById(userVoucherId)
+                .orElseThrow(() -> new IllegalArgumentException("UserVoucher not found."));
+
+        if (userVoucher.getStatus() != VoucherStatus.USED) {
+            log.warn("Voucher is not in USED status, status={}", userVoucher.getStatus());
+            return;
+        }
+
+        userVoucher.setStatus(VoucherStatus.AVAILABLE);
+        userVoucher.setUsedAt(null);
+        userVoucherRepository.save(userVoucher);
+
+        Voucher voucher = userVoucher.getVoucher();
+        if (voucher.getUsedCount() != null && voucher.getUsedCount() > 0) {
+            voucher.setUsedCount(voucher.getUsedCount() - 1);
+            voucherRepository.save(voucher);
+        }
     }
 
     @Override

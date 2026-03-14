@@ -21,6 +21,7 @@ public class OrderResponse {
     private String orderStatus;
     private String shippingAddress;
     private String paymentMethod;
+    private String paymentStatus;
     private String voucherCode;
     private List<OrderItemResponse> orderItems;
 }

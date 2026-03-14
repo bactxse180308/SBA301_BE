@@ -52,4 +52,6 @@ public class Voucher {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "is_valid")
+    private Boolean isValid = true;
 }

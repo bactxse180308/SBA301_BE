@@ -5,6 +5,7 @@ import com.sba302.electroshop.dto.response.OrderResponse;
 import com.sba302.electroshop.entity.*;
 import com.sba302.electroshop.entity.OrderDetail;
 import com.sba302.electroshop.enums.OrderStatus;
+import com.sba302.electroshop.enums.PaymentStatus;
 import com.sba302.electroshop.enums.ProductStatus;
 import com.sba302.electroshop.enums.UserStatus;
 import com.sba302.electroshop.exception.ApiException;
@@ -83,6 +84,7 @@ class OrderServiceImpl implements OrderService {
                 .user(user)
                 .orderDate(LocalDateTime.now())
                 .orderStatus(OrderStatus.PENDING)
+                .paymentStatus(PaymentStatus.PENDING)
                 .shippingAddress(request.getShippingAddress())
                 .paymentMethod(request.getPaymentMethod())
                 .build();
@@ -147,8 +149,58 @@ class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
+        // 1. Validate status cancellable
+        if (order.getOrderStatus() == OrderStatus.CANCELLED ||
+                order.getOrderStatus() == OrderStatus.DELIVERED ||
+                order.getOrderStatus() == OrderStatus.SHIPPED) {
+            throw new ApiException("Order cannot be cancelled in status: " + order.getOrderStatus());
+        }
+
+        // 2. Restore stocks
+        List<OrderDetail> details = orderDetailRepository.findByOrderId(orderId);
+        List<BranchProductStock> updatedBranchStocks = new ArrayList<>();
+        List<Product> updatedProducts = new ArrayList<>();
+
+        for (OrderDetail detail : details) {
+            Product product = detail.getProduct();
+            BranchProductStock branchStock = branchProductStockRepository
+                    .findByBranch_BranchIdAndProduct_ProductId(
+                            detail.getBranch().getBranchId(),
+                            product.getProductId())
+                    .orElseThrow(() -> new ApiException("Branch stock record not found for restoration"));
+
+            // Increment stock
+            branchStock.setQuantity(branchStock.getQuantity() + detail.getQuantity());
+            branchStock.setLastUpdated(LocalDateTime.now());
+            updatedBranchStocks.add(branchStock);
+
+            // Decrement soldCount
+            if (product.getSoldCount() != null) {
+                product.setSoldCount(Math.max(0, product.getSoldCount() - detail.getQuantity()));
+                updatedProducts.add(product);
+            }
+        }
+
+        if (!updatedBranchStocks.isEmpty()) {
+            branchProductStockRepository.saveAll(updatedBranchStocks);
+        }
+        if (!updatedProducts.isEmpty()) {
+            productRepository.saveAll(updatedProducts);
+        }
+
+        // 3. Refund voucher if any
+        if (order.getUserVoucher() != null) {
+            voucherService.releaseVoucher(order.getUserVoucher().getUserVoucherId());
+        }
+
+        // 4. Update payment status if paid
+        if (order.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            order.setPaymentStatus(PaymentStatus.REFUNDED);
+        }
+
         order.setOrderStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+        log.info("Order cancelled and resources restored: id={}", orderId);
     }
 
     // ================================================================

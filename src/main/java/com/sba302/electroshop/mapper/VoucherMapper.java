@@ -12,6 +12,7 @@ public interface VoucherMapper {
     @Mapping(target = "voucherId", ignore = true)
     @Mapping(target = "usedCount", ignore = true)
     @Mapping(target = "isActive", ignore = true)
+    @Mapping(target = "isValid", ignore = true)
     Voucher toEntity(CreateVoucherRequest request);
 
     VoucherResponse toResponse(Voucher voucher);
