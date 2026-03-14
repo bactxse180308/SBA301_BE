@@ -1,0 +1,281 @@
+# Hướng dẫn tích hợp Banner API cho Frontend
+
+## 1. Tổng quan
+
+Module Banner cung cấp 2 nhóm API:
+- **Public API**: Lấy banner hiển thị trên trang chủ
+- **Admin API**: Quản lý banner (cần token admin)
+
+---
+
+## 2. Public API (Không cần auth)
+
+### Lấy banner trang chủ
+
+**Endpoint:**
+```
+GET /api/banners/home
+```
+
+**Response:**
+```json
+{
+  "status": 200,
+  "message": "Success",
+  "data": {
+    "main": [
+      {
+        "id": 1,
+        "title": "Banner chính",
+        "subtitle": "Tiêu đề phụ",
+        "description": "Mô tả chi tiết",
+        "imageUrl": "https://...",
+        "imageKey": "banners/banner-1.jpg",
+        "buttonText": "Xem ngay",
+        "buttonLink": "/products",
+        "position": "MAIN",
+        "sortOrder": 0,
+        "isActive": true,
+        "startDate": "2026-01-01T00:00:00",
+        "endDate": "2026-12-31T23:59:59",
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#000000",
+        "createdAt": "2026-01-01T00:00:00",
+        "updatedAt": "2026-01-01T00:00:00"
+      }
+    ],
+    "rightTop": [...],
+    "rightBottom": [...]
+  },
+  "timestamp": "2026-03-14T10:00:00"
+}
+```
+
+---
+
+## 3. Admin API (Cần token Admin)
+
+### Base URL
+```
+/api/admin/banners
+```
+
+### Header
+```
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+```
+
+---
+
+## 4. Danh sách API Admin
+
+### 4.1 Lấy danh sách banner (có phân trang + filter)
+
+```
+GET /api/admin/banners?page=0&size=20&position=MAIN&isActive=true&keyword=banner
+```
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| page | int | Số trang (default: 0) |
+| size | int | Số item/trang (default: 20) |
+| position | string | Lọc theo vị trí: MAIN, RIGHT_TOP, RIGHT_BOTTOM |
+| isActive | boolean | Lọc theo trạng thái |
+| keyword | string | Tìm kiếm theo title hoặc description |
+
+---
+
+### 4.2 Lấy chi tiết 1 banner
+
+```
+GET /api/admin/banners/{id}
+```
+
+**Response:**
+```json
+{
+  "status": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "title": "Banner chính",
+    ...
+  },
+  "timestamp": "2026-03-14T10:00:00"
+}
+```
+
+---
+
+### 4.3 Tạo banner mới
+
+```
+POST /api/admin/banners
+```
+
+**Request Body:**
+```json
+{
+  "title": "Banner Tết 2026",
+  "subtitle": "Khuyến mãi đặc biệt",
+  "description": "Giảm giá upto 50%...",
+  "imageUrl": "https://r2.bucket.com/banners/tet-2026.jpg",
+  "imageKey": "banners/tet-2026.jpg",
+  "buttonText": "Mua ngay",
+  "buttonLink": "/promotion/tet",
+  "position": "MAIN",
+  "sortOrder": 0,
+  "isActive": true,
+  "startDate": "2026-01-25T00:00:00",
+  "endDate": "2026-02-15T23:59:59",
+  "backgroundColor": "#FF0000",
+  "textColor": "#FFFFFF"
+}
+```
+
+**Validation:**
+- `imageUrl`: Bắt buộc
+- `position`: Bắt buộc (MAIN | RIGHT_TOP | RIGHT_BOTTOM)
+- `sortOrder`: >= 0
+- `startDate`, `endDate`: startDate phải trước endDate
+
+---
+
+### 4.4 Cập nhật banner
+
+```
+PUT /api/admin/banners/{id}
+```
+
+**Request Body:** (giống create, các field optional)
+```json
+{
+  "title": "Banner Tết 2026 - Cập nhật",
+  "isActive": false
+}
+```
+
+---
+
+### 4.5 Xóa banner
+
+```
+DELETE /api/admin/banners/{id}
+```
+
+**Response:**
+```json
+{
+  "status": 200,
+  "message": "Success",
+  "data": null,
+  "timestamp": "2026-03-14T10:00:00"
+}
+```
+
+---
+
+### 4.6 Bật/tắt banner (nhanh)
+
+```
+PATCH /api/admin/banners/{id}/status
+```
+
+**Request Body:**
+```json
+{
+  "isActive": false
+}
+```
+
+---
+
+## 5. Quy trình upload ảnh banner
+
+### Bước 1: Frontend gọi API upload để lấy presigned URL
+Sử dụng API có sẵn để upload file lên S3/R2
+
+### Bước 2: Upload ảnh lên S3
+Sử dụng presigned URL để upload file
+
+### Bước 3: Lưu banner
+Gọi API `POST /api/admin/banners` với:
+- `imageUrl`: URL sau khi upload thành công
+- `imageKey`: Key đã dùng khi upload (nên bắt đầu bằng `banners/`)
+
+---
+
+## 6. Quy định đặt tên
+
+### Image Key
+- Phải bắt đầu bằng `banners/`
+- Ví dụ: `banners/main-banner-1.jpg`, `banners/right-top-1.png`
+
+### Button Link
+- Nên là đường dẫn tương đối: `/products`, `/promotion/tet`
+- Hoặc đường dẫn tuyệt đối: `https://electroshop.com/products`
+
+---
+
+## 7. Vị trí banner
+
+| Position | Kích thước đề xuất | Vị trí hiển thị |
+|----------|---------------------|------------------|
+| MAIN | 1920x600 | Banner chính giữa trang |
+| RIGHT_TOP | 400x300 | Banner nhỏ góc phải trên |
+| RIGHT_BOTTOM | 400x300 | Banner nhỏ góc phải dưới |
+
+---
+
+## 8. Xử lý lỗi
+
+| Status Code | Ý nghĩa | Cách xử lý |
+|-------------|---------|------------|
+| 200 | Thành công | Hiển thị dữ liệu |
+| 400 | Validation lỗi | Hiển thị message lỗi từ response |
+| 401 | Chưa đăng nhập | Chuyển sang trang login |
+| 403 | Không có quyền | Hiển thị thông báo "Không có quyền" |
+| 404 | Không tìm thấy | Hiển thị "Banner không tồn tại" |
+| 500 | Lỗi server | Liên hệ admin hoặc thử lại sau |
+
+---
+
+## 9. Ví dụ code gọi API (React)
+
+### Lấy banner trang chủ
+```javascript
+const fetchHomeBanners = async () => {
+  const res = await fetch('/api/banners/home');
+  const data = await res.json();
+  return data.data; // { main: [], rightTop: [], rightBottom: [] }
+};
+```
+
+### Tạo banner (Admin)
+```javascript
+const createBanner = async (bannerData, token) => {
+  const res = await fetch('/api/admin/banners', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(bannerData)
+  });
+  return res.json();
+};
+```
+
+---
+
+## 10. Lưu ý quan trọng
+
+1. **Banner tự động ẩn**: Hệ thống tự động chỉ trả về các banner đang active và trong thời gian hiển thị (startDate <= now <= endDate)
+
+2. **Sắp xếp**: Banner được sắp xếp theo `sortOrder` tăng dần, sau đó theo `createdAt` giảm dần
+
+3. **Public API**: Chỉ trả về banner hợp lệ, không trả về banner đã hết hạn hoặc bị tắt
+
+4. **Image URL**: Backend KHÔNG tự upload ảnh, frontend phải upload trước và gửi URL lên
