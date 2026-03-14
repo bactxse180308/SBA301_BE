@@ -89,6 +89,14 @@ public class GlobalExceptionHandler {
                         LocalDateTime.now()));
     }
 
+    // ✅ 5.1️⃣ Lỗi banner không tồn tại
+    @ExceptionHandler(BannerNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBannerNotFound(BannerNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                new ApiResponse<>(404, ex.getMessage() != null ? ex.getMessage() : "Banner not found", null,
+                        LocalDateTime.now()));
+    }
+
     // ✅ 5.5️⃣ Lỗi tài nguyên xung đột (duplicate email, code, etc.)
     @ExceptionHandler(ResourceConflictException.class)
     public ResponseEntity<ApiResponse<Object>> handleResourceConflict(ResourceConflictException ex) {
