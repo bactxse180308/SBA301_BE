@@ -15,7 +15,7 @@ public interface VoucherService {
 
     VoucherResponse getById(Integer id);
 
-    VoucherResponse getByCode(String code);
+    VoucherResponse gitgetByCode(String code);
 
     Page<VoucherResponse> search(String keyword, Boolean validOnly, Pageable pageable);
 
@@ -36,6 +36,8 @@ public interface VoucherService {
     BigDecimal calculateDiscount(Voucher voucher, BigDecimal orderTotal);
 
     void markVoucherAsUsed(Integer userVoucherId);
+
+    void releaseVoucher(Integer userVoucherId);
 
     void delete(Integer id);
 }

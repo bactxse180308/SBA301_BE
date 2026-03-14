@@ -167,10 +167,15 @@ public class VNPayServiceImpl implements VNPayService {
             Order order = transaction.getOrder();
             order.setOrderStatus(OrderStatus.CONFIRMED);
             order.setPaymentMethod("VNPAY");
+            order.setPaymentStatus(PaymentStatus.SUCCESS);
             orderRepository.save(order);
             log.info("VNPay IPN: Payment success. txnRef={}, orderId={}", txnRef, order.getOrderId());
         } else {
             transaction.setStatus(PaymentStatus.FAILED);
+            Order order = transaction.getOrder();
+            order.setOrderStatus(OrderStatus.CANCELLED);
+            order.setPaymentStatus(PaymentStatus.FAILED);
+            orderRepository.save(order);
             log.info("VNPay IPN: Payment failed. txnRef={}, responseCode={}", txnRef, responseCode);
         }
 
@@ -214,9 +219,13 @@ public class VNPayServiceImpl implements VNPayService {
                 Order order = transaction.getOrder();
                 order.setOrderStatus(OrderStatus.CONFIRMED);
                 order.setPaymentMethod("VNPAY");
+                order.setPaymentStatus(PaymentStatus.SUCCESS);
                 orderRepository.save(order);
             } else {
                 transaction.setStatus(PaymentStatus.FAILED);
+                Order order = transaction.getOrder();
+                order.setPaymentStatus(PaymentStatus.FAILED);
+                orderRepository.save(order);
             }
             paymentTransactionRepository.save(transaction);
         }

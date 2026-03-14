@@ -13,6 +13,7 @@ public interface OrderMapper {
     @Mapping(source = "user.fullName", target = "userFullName")
     @Mapping(source = "userVoucher.voucher.voucherCode", target = "voucherCode")
     @Mapping(source = "orderStatus", target = "orderStatus")
+    @Mapping(source = "paymentStatus", target = "paymentStatus")
     @Mapping(source = "orderDetails", target = "orderItems")
     OrderResponse toResponse(Order order);
 
