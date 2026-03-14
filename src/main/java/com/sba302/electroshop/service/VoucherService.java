@@ -15,7 +15,7 @@ public interface VoucherService {
 
     VoucherResponse getById(Integer id);
 
-    VoucherResponse gitgetByCode(String code);
+    VoucherResponse getByCode(String code);
 
     Page<VoucherResponse> search(String keyword, Boolean validOnly, Pageable pageable);
 
