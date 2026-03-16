@@ -77,4 +77,8 @@ public class Product {
 
     @Column(name = "main_image", length = 1000)
     private String mainImage;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private java.util.List<BulkPriceTier> priceTiers = new java.util.ArrayList<>();
 }

@@ -14,6 +14,7 @@ import com.sba302.electroshop.mapper.OrderMapper;
 import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.OrderService;
 import com.sba302.electroshop.service.VoucherService;
+import com.sba302.electroshop.dto.response.VoucherApplicationResult;
 import com.sba302.electroshop.specification.OrderSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -97,20 +98,18 @@ class OrderServiceImpl implements OrderService {
 
         // 6. Apply voucher nếu có
         if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
-            UserVoucher userVoucher = voucherService.validateAndGetVoucher(
+            VoucherApplicationResult voucherResult = voucherService.applyVoucher(
                     request.getVoucherCode(), userId, totalAmount);
-
-            BigDecimal discount = voucherService.calculateDiscount(
-                    userVoucher.getVoucher(), totalAmount);
-
+            
+            BigDecimal discount = voucherResult.getDiscountAmount();
             BigDecimal finalAmount = totalAmount.subtract(discount).max(BigDecimal.ZERO);
 
             order.setTotalAmount(totalAmount);
             order.setDiscountAmount(discount);
             order.setFinalAmount(finalAmount);
-            order.setUserVoucher(userVoucher);
+            order.setUserVoucher(voucherResult.getUserVoucher());
 
-            voucherService.markVoucherAsUsed(userVoucher.getUserVoucherId());
+            voucherService.markVoucherAsUsed(voucherResult.getUserVoucher().getUserVoucherId());
             Order savedOrder = orderRepository.save(order);
 
             log.info("Order placed with voucher, id={}, discount={}", savedOrder.getOrderId(), discount);

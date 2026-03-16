@@ -10,8 +10,8 @@ import java.util.Optional;
 @Repository
 public interface BulkPriceTierRepository extends JpaRepository<BulkPriceTier, Integer> {
 
-    List<BulkPriceTier> findByBulkOrderDetail_BulkOrderDetailId(Integer detailId);
+    List<BulkPriceTier> findByProduct_ProductIdAndIsActiveTrueOrderByMinQtyAsc(Integer productId);
 
-    Optional<BulkPriceTier> findTopByBulkOrderDetail_BulkOrderDetailIdAndMinQtyLessThanEqualOrderByMinQtyDesc(
-            Integer detailId, Integer quantity);
+    Optional<BulkPriceTier> findTopByProduct_ProductIdAndMinQtyLessThanEqualAndIsActiveTrueOrderByMinQtyDesc(
+            Integer productId, Integer quantity);
 }

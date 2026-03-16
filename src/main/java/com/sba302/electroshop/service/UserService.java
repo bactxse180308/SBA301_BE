@@ -14,7 +14,7 @@ public interface UserService {
 
     UserResponse getByEmail(String email);
 
-    Page<UserResponse> search(String email, String phoneNumber, UserStatus status, Pageable pageable);
+    Page<UserResponse> search(String email, String phoneNumber, UserStatus status, String roleName, Pageable pageable);
 
     UserResponse create(CreateUserRequest request);
 

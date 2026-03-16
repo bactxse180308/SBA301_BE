@@ -13,6 +13,10 @@ public interface ProductService {
 
     Page<ProductResponse> search(String keyword, Integer categoryId, Integer brandId, Pageable pageable);
 
+    com.sba302.electroshop.dto.response.CompanyProductResponse getCompanyProductById(Integer id);
+
+    Page<com.sba302.electroshop.dto.response.CompanyProductResponse> searchForCompany(String keyword, Integer categoryId, Integer brandId, Pageable pageable);
+
     // Command operations
     ProductResponse create(CreateProductRequest request);
 

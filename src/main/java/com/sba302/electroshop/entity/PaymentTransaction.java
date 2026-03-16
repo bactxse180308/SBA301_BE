@@ -1,6 +1,7 @@
 package com.sba302.electroshop.entity;
 
 import com.sba302.electroshop.enums.PaymentStatus;
+import com.sba302.electroshop.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,8 +29,16 @@ public class PaymentTransaction {
     private String txnRef;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id")
     private Order order;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bulk_order_id")
+    private BulkOrder bulkOrder;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_type", length = 20, nullable = false)
+    private PaymentType paymentType;
 
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;

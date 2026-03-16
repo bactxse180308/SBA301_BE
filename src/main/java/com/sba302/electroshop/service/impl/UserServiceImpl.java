@@ -49,12 +49,12 @@ class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> search(String email, String phoneNumber, UserStatus status, Pageable pageable) {
-        log.info("Searching users with filters - email: {}, phoneNumber: {}, status: {}", email, phoneNumber, status);
+    public Page<UserResponse> search(String email, String phoneNumber, UserStatus status, String roleName, Pageable pageable) {
+        log.info("Searching users with filters - email: {}, phoneNumber: {}, status: {}, role: {}", email, phoneNumber, status, roleName);
         
         try {
             // Build specification with filters
-            Specification<User> spec = UserSpecification.filterUsers(email, phoneNumber, status);
+            Specification<User> spec = UserSpecification.filterUsers(email, phoneNumber, status, roleName);
             
             // Execute query with specification
             Page<User> users = userRepository.findAll(spec, pageable);
@@ -65,8 +65,8 @@ class UserServiceImpl implements UserService {
             return users.map(userMapper::toResponse);
             
         } catch (Exception e) {
-            log.error("Error occurred while searching users with filters - email: {}, phoneNumber: {}, status: {}", 
-                    email, phoneNumber, status, e);
+            log.error("Error occurred while searching users with filters - email: {}, phoneNumber: {}, status: {}, role: {}", 
+                    email, phoneNumber, status, roleName, e);
             throw e;
         }
     }

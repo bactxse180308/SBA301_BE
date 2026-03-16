@@ -54,17 +54,18 @@ public class UserController {
 //        return ApiResponse.success(userService.getByEmail(email));
 //    }
 
-    @Operation(summary = "Search users", description = "Search users with optional filters: email, phoneNumber and status (Admin only)")
+    @Operation(summary = "Search users", description = "Search users with optional filters: email, phoneNumber, status and role (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ApiResponse<Page<UserResponse>> search(
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) UserStatus status,
+            @RequestParam(required = false) String role,
             @Parameter(description = "Pagination and sorting parameters. Default sort: fullName,asc", 
                        schema = @Schema(example = "{\"page\": 0, \"size\": 20, \"sort\": [\"fullName,asc\"]}"))
             @PageableDefault(size = 20, sort = "fullName", direction = org.springframework.data.domain.Sort.Direction.ASC) Pageable pageable) {
-        return ApiResponse.success(userService.search(email, phoneNumber, status, pageable));
+        return ApiResponse.success(userService.search(email, phoneNumber, status, role, pageable));
     }
 
     @Operation(summary = "Create new user", description = "Create a new user with role assignment (Admin only)")

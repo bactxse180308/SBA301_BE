@@ -17,6 +17,8 @@ import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -124,6 +126,36 @@ class CompanyServiceImpl implements CompanyService {
         Company updatedCompany = companyRepository.save(company);
         log.info("Company updated successfully with id: {}", id);
         return companyMapper.toResponse(updatedCompany);
+    }
+
+    @Override
+    @Transactional
+    public CompanyResponse updateStatus(Integer id, CompanyStatus status) {
+        log.info("Updating status for company id: {} to {}", id, status);
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + id));
+
+        company.setStatus(status);
+        if (status == CompanyStatus.APPROVED) {
+            company.setApprovedAt(LocalDateTime.now());
+        }
+
+        Company updatedCompany = companyRepository.save(company);
+        log.info("Company status updated to {} for id: {}", status, id);
+        return companyMapper.toResponse(updatedCompany);
+    }
+
+    @Override
+    public CompanyResponse getByUserId(Integer userId) {
+        log.info("Fetching company registration for userId: {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (user.getCompany() == null) {
+            throw new ResourceNotFoundException("No company registration found for this user");
+        }
+
+        return companyMapper.toResponse(user.getCompany());
     }
 
     @Override

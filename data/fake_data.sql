@@ -90,9 +90,9 @@ SET IDENTITY_INSERT [dbo].[ORDER] OFF
 GO
 SET IDENTITY_INSERT [dbo].[bulk_order] ON
 
-INSERT [dbo].[bulk_order] ([bulk_order_id], [created_at], [discount_amount], [discount_applied], [discount_code], [discount_percentage], [final_price], [status], [total_price], [company_id], [user_id]) VALUES (4, CAST(N'2026-02-01T09:00:00.0000000' AS DateTime2), NULL, NULL, NULL, NULL, NULL, N'APPROVED', CAST(158970000.00 AS Numeric(38, 2)), 5, 11)
-INSERT [dbo].[bulk_order] ([bulk_order_id], [created_at], [discount_amount], [discount_applied], [discount_code], [discount_percentage], [final_price], [status], [total_price], [company_id], [user_id]) VALUES (5, CAST(N'2026-02-15T10:00:00.0000000' AS DateTime2), NULL, NULL, NULL, NULL, NULL, N'PENDING', CAST(83960000.00 AS Numeric(38, 2)), 6, 12)
-INSERT [dbo].[bulk_order] ([bulk_order_id], [created_at], [discount_amount], [discount_applied], [discount_code], [discount_percentage], [final_price], [status], [total_price], [company_id], [user_id]) VALUES (6, CAST(N'2026-03-01T08:00:00.0000000' AS DateTime2), NULL, NULL, NULL, NULL, NULL, N'PROCESSING', CAST(43990000.00 AS Numeric(38, 2)), 5, 11)
+INSERT [dbo].[bulk_order] ([bulk_order_id], [created_at], [updated_at], [voucher_discount_amount], [discount_applied], [voucher_code], [voucher_type], [final_price], [status], [subtotal_after_tier], [shipping_fee], [shipping_fee_waived], [cancel_reason], [company_id], [user_id]) VALUES (4, CAST(N'2026-02-01T09:00:00.0000000' AS DateTime2), CAST(N'2026-02-01T10:00:00.0000000' AS DateTime2), 0, 0, NULL, NULL, 158970000.00, N'CONFIRMED', CAST(158970000.00 AS Numeric(38, 2)), 0, 1, NULL, 5, 11)
+INSERT [dbo].[bulk_order] ([bulk_order_id], [created_at], [updated_at], [voucher_discount_amount], [discount_applied], [voucher_code], [voucher_type], [final_price], [status], [subtotal_after_tier], [shipping_fee], [shipping_fee_waived], [cancel_reason], [company_id], [user_id]) VALUES (5, CAST(N'2026-02-15T10:00:00.0000000' AS DateTime2), NULL, 0, 0, NULL, NULL, 83960000.00, N'PENDING_REVIEW', CAST(83960000.00 AS Numeric(38, 2)), 0, 0, NULL, 6, 12)
+INSERT [dbo].[bulk_order] ([bulk_order_id], [created_at], [updated_at], [voucher_discount_amount], [discount_applied], [voucher_code], [voucher_type], [final_price], [status], [subtotal_after_tier], [shipping_fee], [shipping_fee_waived], [cancel_reason], [company_id], [user_id]) VALUES (6, CAST(N'2026-03-01T08:00:00.0000000' AS DateTime2), CAST(N'2026-03-02T08:00:00.0000000' AS DateTime2), 1000000.00, 1, N'OFFER1M', N'FIXED', 42990000.00, N'PROCESSING', CAST(43990000.00 AS Numeric(38, 2)), 0, 1, NULL, 5, 11)
 SET IDENTITY_INSERT [dbo].[bulk_order] OFF
 GO
 SET IDENTITY_INSERT [dbo].[brand] ON
@@ -409,22 +409,22 @@ SET IDENTITY_INSERT [dbo].[product_attribute] OFF
 GO
 SET IDENTITY_INSERT [dbo].[bulk_order_details] ON
 
-INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (6, CAST(300000.00 AS Numeric(38, 2)), 20, CAST(4290000.00 AS Numeric(38, 2)), 4, 22)
-INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (7, CAST(200000.00 AS Numeric(38, 2)), 10, CAST(3690000.00 AS Numeric(38, 2)), 4, 23)
-INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (8, CAST(100000.00 AS Numeric(38, 2)), 5, CAST(3490000.00 AS Numeric(38, 2)), 5, 24)
-INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (9, CAST(100000.00 AS Numeric(38, 2)), 10, CAST(1290000.00 AS Numeric(38, 2)), 5, 16)
-INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (10, CAST(50000.00 AS Numeric(38, 2)), 5, CAST(890000.00 AS Numeric(38, 2)), 6, 19)
+INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [applied_tier_price], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (6, CAST(3700000.00 AS Numeric(38, 2)), 0, 20, CAST(4290000.00 AS Numeric(38, 2)), 4, 22)
+INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [applied_tier_price], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (7, CAST(3400000.00 AS Numeric(38, 2)), 0, 10, CAST(3690000.00 AS Numeric(38, 2)), 4, 23)
+INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [applied_tier_price], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (8, CAST(3200000.00 AS Numeric(38, 2)), 0, 5, CAST(3490000.00 AS Numeric(38, 2)), 5, 24)
+INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [applied_tier_price], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (9, CAST(1290000.00 AS Numeric(38, 2)), 0, 10, CAST(1290000.00 AS Numeric(38, 2)), 5, 16)
+INSERT [dbo].[bulk_order_details] ([bulk_order_detail_id], [applied_tier_price], [discount_snapshot], [quantity], [unit_price_snapshot], [bulk_order_id], [product_id]) VALUES (10, CAST(890000.00 AS Numeric(38, 2)), 0, 5, CAST(890000.00 AS Numeric(38, 2)), 6, 19)
 SET IDENTITY_INSERT [dbo].[bulk_order_details] OFF
 GO
 SET IDENTITY_INSERT [dbo].[bulk_price_tier] ON
 
-INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [unit_price], [bulk_order_detail_id]) VALUES (8, 1, CAST(4290000.00 AS Numeric(38, 2)), 6)
-INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [unit_price], [bulk_order_detail_id]) VALUES (9, 10, CAST(3990000.00 AS Numeric(38, 2)), 6)
-INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [unit_price], [bulk_order_detail_id]) VALUES (10, 20, CAST(3700000.00 AS Numeric(38, 2)), 6)
-INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [unit_price], [bulk_order_detail_id]) VALUES (11, 1, CAST(3690000.00 AS Numeric(38, 2)), 7)
-INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [unit_price], [bulk_order_detail_id]) VALUES (12, 10, CAST(3400000.00 AS Numeric(38, 2)), 7)
-INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [unit_price], [bulk_order_detail_id]) VALUES (13, 1, CAST(3490000.00 AS Numeric(38, 2)), 8)
-INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [unit_price], [bulk_order_detail_id]) VALUES (14, 5, CAST(3200000.00 AS Numeric(38, 2)), 8)
+INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [max_qty], [unit_price], [is_active], [product_id]) VALUES (8, 1, 9, CAST(4290000.00 AS Numeric(38, 2)), 1, 22)
+INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [max_qty], [unit_price], [is_active], [product_id]) VALUES (9, 10, 19, CAST(3990000.00 AS Numeric(38, 2)), 1, 22)
+INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [max_qty], [unit_price], [is_active], [product_id]) VALUES (10, 20, NULL, CAST(3700000.00 AS Numeric(38, 2)), 1, 22)
+INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [max_qty], [unit_price], [is_active], [product_id]) VALUES (11, 1, 9, CAST(3690000.00 AS Numeric(38, 2)), 1, 23)
+INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [max_qty], [unit_price], [is_active], [product_id]) VALUES (12, 10, NULL, CAST(3400000.00 AS Numeric(38, 2)), 1, 23)
+INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [max_qty], [unit_price], [is_active], [product_id]) VALUES (13, 1, 4, CAST(3490000.00 AS Numeric(38, 2)), 1, 24)
+INSERT [dbo].[bulk_price_tier] ([bulk_price_tier_id], [min_qty], [max_qty], [unit_price], [is_active], [product_id]) VALUES (14, 5, NULL, CAST(3200000.00 AS Numeric(38, 2)), 1, 24)
 SET IDENTITY_INSERT [dbo].[bulk_price_tier] OFF
 GO
 SET IDENTITY_INSERT [dbo].[order_customization] ON

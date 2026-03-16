@@ -13,8 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @RestController
@@ -24,6 +26,7 @@ public class BulkOrderController {
 
     private final BulkOrderService bulkOrderService;
 
+    @PreAuthorize("hasRole('ADMIN') or @bulkOrderSecurity.isOwner(#id)")
     @GetMapping("/{id}")
     public ApiResponse<BulkOrderResponse> getById(@PathVariable Integer id) {
         return ApiResponse.success(bulkOrderService.getById(id));
@@ -48,11 +51,21 @@ public class BulkOrderController {
         return ApiResponse.success(bulkOrderService.create(userId, request));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/status")
     public ApiResponse<BulkOrderResponse> updateStatus(
             @PathVariable Integer id,
-            @RequestParam BulkOrderStatus status) {
-        return ApiResponse.success(bulkOrderService.updateStatus(id, status));
+            @RequestParam BulkOrderStatus status,
+            @RequestParam(required = false) String note) {
+        return ApiResponse.success(bulkOrderService.updateStatus(id, status, note));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/shipping-fee")
+    public ApiResponse<BulkOrderResponse> updateShippingFee(
+            @PathVariable Integer id,
+            @RequestParam BigDecimal shippingFee) {
+        return ApiResponse.success(bulkOrderService.updateShippingFee(id, shippingFee));
     }
 
     @PostMapping("/details/{detailId}/customization")
@@ -63,8 +76,27 @@ public class BulkOrderController {
         return ApiResponse.success(bulkOrderService.addCustomization(detailId, request));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or @bulkOrderSecurity.isOwner(#id)")
     @GetMapping("/{id}/price-breakdown")
     public ApiResponse<BulkOrderResponse> getPriceBreakdown(@PathVariable Integer id) {
         return ApiResponse.success(bulkOrderService.getPriceBreakdown(id));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/customizations/{customizationId}/review")
+    public ApiResponse<BulkOrderResponse> reviewCustomization(
+            @PathVariable Integer customizationId,
+            @RequestParam String status,
+            @RequestParam BigDecimal extraFee,
+            @RequestParam(required = false) String feeType) {
+        return ApiResponse.success(bulkOrderService.reviewCustomization(customizationId, status, extraFee, feeType));
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or @bulkOrderSecurity.isOwner(#id)")
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<BulkOrderResponse> cancel(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String reason) {
+        return ApiResponse.success(bulkOrderService.cancel(id, reason));
     }
 }

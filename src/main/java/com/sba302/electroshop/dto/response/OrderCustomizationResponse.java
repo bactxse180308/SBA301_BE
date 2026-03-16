@@ -14,5 +14,8 @@ public class OrderCustomizationResponse {
     private String note;
     private String status;
     private BigDecimal extraFee;
+    private String feeType;
+    private BigDecimal totalFee;
+    private String adminNote;
 }
 

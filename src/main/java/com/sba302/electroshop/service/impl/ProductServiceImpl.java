@@ -77,6 +77,41 @@ class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public com.sba302.electroshop.dto.response.CompanyProductResponse getCompanyProductById(Integer id) {
+        log.info("Fetching company product with id={}", id);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        
+        com.sba302.electroshop.dto.response.CompanyProductResponse response = productMapper.toCompanyResponse(product);
+        response.setQuantity(branchProductStockRepository.sumQuantityByProductId(id));
+        return response;
+    }
+
+    @Override
+    public Page<com.sba302.electroshop.dto.response.CompanyProductResponse> searchForCompany(String keyword, Integer categoryId, Integer brandId, Pageable pageable) {
+        log.info("Searching company products keyword={}, categoryId={}, brandId={}", keyword, categoryId, brandId);
+        Specification<Product> spec = ProductSpecification.filter(keyword, categoryId, brandId);
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
+        
+        List<Integer> productIds = productPage.getContent().stream()
+                .map(Product::getProductId)
+                .collect(Collectors.toList());
+        
+        Map<Integer, Integer> stockMap = branchProductStockRepository.sumQuantityByProductIds(productIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> ((Long) row[1]).intValue()
+                ));
+        
+        return productPage.map(product -> {
+            com.sba302.electroshop.dto.response.CompanyProductResponse response = productMapper.toCompanyResponse(product);
+            response.setQuantity(stockMap.getOrDefault(product.getProductId(), 0));
+            response.setDescriptionDetails(null); // Save bandwidth
+            return response;
+        });
+    }
+
+    @Override
     @Transactional
     public ProductResponse create(CreateProductRequest request) {
         log.info("Creating product: {}", request.getProductName());

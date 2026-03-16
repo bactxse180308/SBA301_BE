@@ -4,6 +4,7 @@ import com.sba302.electroshop.dto.response.*;
 import com.sba302.electroshop.service.AdminDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminDashboardController {
 
     private final AdminDashboardService adminDashboardService;
@@ -54,4 +56,10 @@ public class AdminDashboardController {
             @RequestParam(value = "limit", required = false, defaultValue = "5") Integer limit) {
         return ApiResponse.success(adminDashboardService.getRecentOrders(limit));
     }
+
+    @GetMapping("/bulk-order-stats")
+    public ApiResponse<BulkOrderStatsResponse> getBulkOrderStats() {
+        return ApiResponse.success(adminDashboardService.getBulkOrderStats());
+    }
 }
+ 

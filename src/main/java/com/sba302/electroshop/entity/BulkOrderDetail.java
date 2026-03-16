@@ -37,9 +37,8 @@ public class BulkOrderDetail {
     @Column(name = "discount_snapshot")
     private BigDecimal discountSnapshot;
 
-    @OneToMany(mappedBy = "bulkOrderDetail", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<BulkPriceTier> priceTiers = new ArrayList<>();
+    @Column(name = "applied_tier_price")
+    private BigDecimal appliedTierPrice;
 
     @OneToMany(mappedBy = "bulkOrderDetail", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

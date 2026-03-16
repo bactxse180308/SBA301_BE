@@ -4,15 +4,16 @@ import com.sba302.electroshop.dto.request.CreateBulkOrderRequest;
 import com.sba302.electroshop.dto.request.CreateCustomizationRequest;
 import com.sba302.electroshop.dto.response.BulkOrderDetailResponse;
 import com.sba302.electroshop.dto.response.BulkOrderResponse;
+import com.sba302.electroshop.dto.response.OrderCustomizationResponse;
 import com.sba302.electroshop.entity.*;
 import com.sba302.electroshop.enums.BulkOrderStatus;
 import com.sba302.electroshop.enums.CustomizationStatus;
-import com.sba302.electroshop.enums.DiscountType;
-import com.sba302.electroshop.enums.VoucherStatus;
+import com.sba302.electroshop.dto.response.VoucherApplicationResult;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.BulkOrderMapper;
 import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.BulkOrderService;
+import com.sba302.electroshop.service.VoucherService;
 import com.sba302.electroshop.specification.BulkOrderSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,14 +35,12 @@ class BulkOrderServiceImpl implements BulkOrderService {
 
     private final BulkOrderRepository bulkOrderRepository;
     private final BulkOrderDetailRepository bulkOrderDetailRepository;
-    private final BulkPriceTierRepository bulkPriceTierRepository;
     private final OrderCustomizationRepository orderCustomizationRepository;
     private final UserRepository userRepository;
-    private final CompanyRepository companyRepository;
     private final ProductRepository productRepository;
-    private final VoucherRepository voucherRepository;
-    private final UserVoucherRepository userVoucherRepository;
     private final BulkOrderMapper bulkOrderMapper;
+    private final BulkOrderPricingService pricingService;
+    private final VoucherService voucherService;
 
     @Override
     @Transactional(readOnly = true)
@@ -72,23 +69,29 @@ class BulkOrderServiceImpl implements BulkOrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         // BƯỚC 2: Validate Company
-        Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
+        Company company = user.getCompany();
+        if (company == null) {
+            throw new IllegalArgumentException("User does not belong to any company. Cannot create bulk order.");
+        }
 
         // BƯỚC 3: Tạo BulkOrder và save ngay
         BulkOrder savedOrder = BulkOrder.builder()
                 .user(user)
                 .company(company)
                 .createdAt(LocalDateTime.now())
-                .status(BulkOrderStatus.PENDING)
-                .totalPrice(BigDecimal.ZERO)
+                .status(BulkOrderStatus.PENDING_REVIEW)
+                .subtotalAfterTier(BigDecimal.ZERO)
                 .finalPrice(BigDecimal.ZERO)
+                .shippingFeeWaived(false)
                 .discountApplied(false)
+                .shippingAddress(request.getShippingAddress())
                 .build();
         savedOrder = bulkOrderRepository.save(savedOrder);
 
         // BƯỚC 4: Duyệt từng item, tạo detail, tính subtotal
         BigDecimal subtotal = BigDecimal.ZERO;
+        List<BulkOrderDetail> detailsToSave = new ArrayList<>();
+        List<OrderCustomization> customizationsToSave = new ArrayList<>();
 
         for (CreateBulkOrderRequest.BulkOrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId())
@@ -104,73 +107,60 @@ class BulkOrderServiceImpl implements BulkOrderService {
                     .discountSnapshot(BigDecimal.ZERO)
                     .build();
 
-            BulkOrderDetail savedDetail = bulkOrderDetailRepository.save(detail);
-
             // Tính giá theo BulkPriceTier (nếu có), nếu không dùng unitPrice
-            BigDecimal tierPrice = lookupTierPrice(savedDetail);
-            BigDecimal lineTotal = tierPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+            BigDecimal tierPrice = pricingService.lookupTierPrice(product.getProductId(), item.getQuantity(), unitPrice);
+            detail.setAppliedTierPrice(tierPrice);
+            
+            detailsToSave.add(detail);
+
+            BigDecimal customizationFeeTotal = BigDecimal.ZERO;
+            if (item.getCustomizations() != null && !item.getCustomizations().isEmpty()) {
+                for (CreateCustomizationRequest custReq : item.getCustomizations()) {
+                    OrderCustomization customization = OrderCustomization.builder()
+                            .bulkOrderDetail(detail)
+                            .type(custReq.getType())
+                            .note(custReq.getNote())
+                            .status(CustomizationStatus.PENDING)
+                            .extraFee(BigDecimal.ZERO)
+                            .build();
+                    customizationsToSave.add(customization);
+                    customizationFeeTotal = customizationFeeTotal.add(customization.getExtraFee());
+                }
+            }
+
+            BigDecimal lineTotal = tierPrice.multiply(BigDecimal.valueOf(item.getQuantity()))
+                    .add(customizationFeeTotal);
             subtotal = subtotal.add(lineTotal);
+        }
+
+        bulkOrderDetailRepository.saveAll(detailsToSave);
+        if (!customizationsToSave.isEmpty()) {
+            orderCustomizationRepository.saveAll(customizationsToSave);
         }
 
         // BƯỚC 5: Áp dụng Voucher nếu có
         String voucherCode = request.getVoucherCode();
         if (voucherCode != null && !voucherCode.isBlank()) {
-            // 5.1 Tìm voucher theo code
-            Voucher voucher = voucherRepository.findByVoucherCode(voucherCode)
-                    .orElseThrow(() -> new ResourceNotFoundException("Voucher không hợp lệ: " + voucherCode));
+            VoucherApplicationResult voucherResult = voucherService.applyVoucher(voucherCode, userId, subtotal);
+            
+            BigDecimal discountAmount = voucherResult.getDiscountAmount();
+            BigDecimal finalPrice = subtotal.subtract(discountAmount).max(BigDecimal.ZERO);
 
-            // 5.2 Validate thời hạn
-            LocalDateTime now = LocalDateTime.now();
-            if (voucher.getValidFrom() != null && now.isBefore(voucher.getValidFrom())) {
-                throw new IllegalArgumentException("Voucher chưa có hiệu lực");
-            }
-            if (voucher.getValidTo() != null && now.isAfter(voucher.getValidTo())) {
-                throw new IllegalArgumentException("Voucher đã hết hạn");
-            }
-
-            // 5.3 Validate UserVoucher
-            UserVoucher userVoucher = userVoucherRepository
-                    .findByUser_UserIdAndVoucher_VoucherCode(userId, voucherCode)
-                    .orElseThrow(() -> new ResourceNotFoundException("User không có voucher này"));
-
-            if (userVoucher.getStatus() == VoucherStatus.USED) {
-                throw new IllegalArgumentException("Voucher đã được sử dụng");
-            }
-
-            // 5.4 Tính giảm giá
-            BigDecimal discountAmount = BigDecimal.ZERO;
-            BigDecimal discountPercentage = BigDecimal.ZERO;
-
-            if (voucher.getDiscountType() == DiscountType.PERCENT) {
-                discountPercentage = voucher.getDiscountValue();
-                discountAmount = subtotal.multiply(discountPercentage)
-                        .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-            } else if (voucher.getDiscountType() == DiscountType.FIXED) {
-                discountAmount = voucher.getDiscountValue();
-            }
-
-            BigDecimal finalPrice = subtotal.subtract(discountAmount);
-            if (finalPrice.compareTo(BigDecimal.ZERO) < 0) finalPrice = BigDecimal.ZERO;
-
-            // 5.5 Set discount vào order
-            savedOrder.setDiscountCode(voucherCode);
-            savedOrder.setDiscountPercentage(discountPercentage);
-            savedOrder.setDiscountAmount(discountAmount);
+            savedOrder.setVoucherCode(voucherCode);
+            savedOrder.setVoucherType(voucherResult.getVoucherType());
+            savedOrder.setVoucherDiscountAmount(discountAmount);
             savedOrder.setFinalPrice(finalPrice);
             savedOrder.setDiscountApplied(true);
 
-            // 5.6 Đánh dấu voucher đã dùng
-            userVoucher.setStatus(VoucherStatus.USED);
-            userVoucher.setUsedAt(now);
-            userVoucherRepository.save(userVoucher);
+            voucherService.markVoucherAsUsed(voucherResult.getUserVoucher().getUserVoucherId());
 
         } else {
             savedOrder.setFinalPrice(subtotal);
             savedOrder.setDiscountApplied(false);
         }
 
-        // BƯỚC 6: Cập nhật totalPrice và finalPrice, KHÔNG setDetails
-        savedOrder.setTotalPrice(subtotal);
+        // BƯỚC 6: Cập nhật subtotalAfterTier, KHÔNG setDetails
+        savedOrder.setSubtotalAfterTier(subtotal);
         bulkOrderRepository.save(savedOrder);
 
         // BƯỚC 7: Reload từ DB để lấy đầy đủ details rồi return
@@ -181,11 +171,44 @@ class BulkOrderServiceImpl implements BulkOrderService {
 
     @Override
     @Transactional
-    public BulkOrderResponse updateStatus(Integer id, BulkOrderStatus status) {
+    public BulkOrderResponse updateStatus(Integer id, BulkOrderStatus status, String note) {
         BulkOrder bulkOrder = bulkOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found with id: " + id));
 
         bulkOrder.setStatus(status);
+        bulkOrder.setUpdatedAt(LocalDateTime.now());
+
+        if (status == BulkOrderStatus.CONFIRMED) {
+            log.info("Order CONFIRMED. Snapshotting prices for BulkOrder ID: {}", id);
+            for (BulkOrderDetail detail : bulkOrder.getDetails()) {
+                BigDecimal tierPrice = detail.getAppliedTierPrice();
+                if (tierPrice == null) {
+                    tierPrice = pricingService.lookupTierPrice(detail.getProduct().getProductId(), detail.getQuantity(), detail.getProduct().getPrice());
+                    detail.setAppliedTierPrice(tierPrice);
+                }
+                detail.setUnitPriceSnapshot(tierPrice);
+                
+                BigDecimal originalPrice = detail.getProduct().getPrice() != null ? detail.getProduct().getPrice() : tierPrice;
+                detail.setDiscountSnapshot(originalPrice.subtract(tierPrice));
+                
+                bulkOrderDetailRepository.save(detail);
+            }
+        } else if (status == BulkOrderStatus.REJECTED || status == BulkOrderStatus.CANCELLED) {
+            bulkOrder.setCancelReason(note);
+            
+            if (Boolean.TRUE.equals(bulkOrder.getDiscountApplied()) && bulkOrder.getVoucherCode() != null) {
+                User user = bulkOrder.getUser();
+                if (user != null) {
+                    try {
+                        voucherService.releaseVoucher(user.getUserId(), bulkOrder.getVoucherCode());
+                        log.info("Released voucher {} for cancelled bulk order ID: {}", bulkOrder.getVoucherCode(), id);
+                    } catch (Exception e) {
+                        log.warn("Failed to release voucher {} for bulk order ID {}: {}", bulkOrder.getVoucherCode(), id, e.getMessage());
+                    }
+                }
+            }
+        }
+
         BulkOrder updated = bulkOrderRepository.save(bulkOrder);
         return buildFullResponse(updated);
     }
@@ -201,25 +224,76 @@ class BulkOrderServiceImpl implements BulkOrderService {
                 .type(request.getType())
                 .note(request.getNote())
                 .status(CustomizationStatus.PENDING)
-                .extraFee(request.getExtraFee() != null ? request.getExtraFee() : BigDecimal.ZERO)
+                .extraFee(BigDecimal.ZERO)
                 .build();
 
         orderCustomizationRepository.save(customization);
 
         // Recalculate total price for the parent bulk order
         BulkOrder bulkOrder = detail.getBulkOrder();
-        recalculateTotalPrice(bulkOrder);
+        
+        List<BulkOrderDetail> details = bulkOrderDetailRepository
+                .findByBulkOrder_BulkOrderId(bulkOrder.getBulkOrderId());
+        pricingService.recalculate(bulkOrder, details);
+        
         bulkOrderRepository.save(bulkOrder);
 
         return buildFullResponse(bulkOrder);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public BulkOrderResponse getPriceBreakdown(Integer bulkOrderId) {
         BulkOrder bulkOrder = bulkOrderRepository.findById(bulkOrderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found with id: " + bulkOrderId));
         return buildFullResponse(bulkOrder);
+    }
+
+    @Override
+    @Transactional
+    public BulkOrderResponse reviewCustomization(Integer customizationId, String status, BigDecimal extraFee, String feeType) {
+        OrderCustomization customization = orderCustomizationRepository.findById(customizationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customization not found with id: " + customizationId));
+
+        BulkOrder bulkOrder = customization.getBulkOrderDetail().getBulkOrder();
+        validateNegotiableStatus(bulkOrder);
+
+        customization.setStatus(CustomizationStatus.valueOf(status));
+        customization.setExtraFee(extraFee != null ? extraFee : BigDecimal.ZERO);
+        customization.setFeeType(feeType != null ? feeType : "PER_UNIT");
+        orderCustomizationRepository.save(customization);
+
+        List<BulkOrderDetail> details = bulkOrderDetailRepository
+                .findByBulkOrder_BulkOrderId(bulkOrder.getBulkOrderId());
+        pricingService.recalculate(bulkOrder, details);
+        bulkOrderRepository.save(bulkOrder);
+
+        return buildFullResponse(bulkOrder);
+    }
+
+    @Override
+    @Transactional
+    public BulkOrderResponse updateShippingFee(Integer id, BigDecimal shippingFee) {
+        BulkOrder bulkOrder = bulkOrderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found with id: " + id));
+
+        validateNegotiableStatus(bulkOrder);
+
+        bulkOrder.setShippingFee(shippingFee != null ? shippingFee : BigDecimal.ZERO);
+        
+        List<BulkOrderDetail> details = bulkOrderDetailRepository
+                .findByBulkOrder_BulkOrderId(bulkOrder.getBulkOrderId());
+        pricingService.recalculate(bulkOrder, details);
+        
+        BulkOrder updated = bulkOrderRepository.save(bulkOrder);
+        return buildFullResponse(updated);
+    }
+
+    private void validateNegotiableStatus(BulkOrder bulkOrder) {
+        BulkOrderStatus status = bulkOrder.getStatus();
+        if (status != BulkOrderStatus.PENDING_REVIEW && status != BulkOrderStatus.CONFIRMED) {
+            throw new IllegalStateException("Cannot update fees for order in status: " + status + ". Financial changes are only allowed in PENDING_REVIEW or CONFIRMED.");
+        }
     }
 
     // ======================== HELPER METHODS ========================
@@ -233,70 +307,91 @@ class BulkOrderServiceImpl implements BulkOrderService {
         }
 
         List<BulkOrderDetailResponse> detailResponses = new ArrayList<>();
-        BigDecimal totalPrice = BigDecimal.ZERO;
+        
+        BigDecimal basePriceTotal = BigDecimal.ZERO;
+        BigDecimal customizationFeeConfirmedTotal = BigDecimal.ZERO;
+        BigDecimal customizationFeePendingTotal = BigDecimal.ZERO;
+        boolean hasPending = false;
 
         for (BulkOrderDetail detail : details) {
             BulkOrderDetailResponse detailResponse = bulkOrderMapper.toDetailResponse(detail);
 
             // 1. Lookup applied tier price
-            BigDecimal appliedTierPrice = lookupTierPrice(detail);
+            BigDecimal appliedTierPrice = detail.getAppliedTierPrice();
+            if (appliedTierPrice == null) {
+                appliedTierPrice = pricingService.lookupTierPrice(
+                    detail.getProduct().getProductId(), 
+                    detail.getQuantity(), 
+                    detail.getUnitPriceSnapshot()
+                );
+            }
             detailResponse.setAppliedTierPrice(appliedTierPrice);
+            detailResponse.setTierLabel(pricingService.buildTierLabel(detail, appliedTierPrice));
+            
+            // 2. Base price calculation
+            BigDecimal itemBasePrice = detail.getProduct().getPrice() != null ? detail.getProduct().getPrice() : BigDecimal.ZERO;
+            detailResponse.setBasePrice(itemBasePrice);
+            basePriceTotal = basePriceTotal.add(itemBasePrice.multiply(BigDecimal.valueOf(detail.getQuantity())));
 
-            // 2. Calculate customization fee
-            BigDecimal customizationFee = calculateCustomizationFee(detail);
-            detailResponse.setCustomizationFee(customizationFee);
+            // 3. Customization fees
+            BigDecimal feeConfirmed = pricingService.calculateCustomizationFeeByStatus(detail, CustomizationStatus.APPROVED);
+            BigDecimal feePending = pricingService.calculateCustomizationFeeByStatus(detail, CustomizationStatus.PENDING);
+            
+            detailResponse.setCustomizationFeeConfirmed(feeConfirmed);
+            detailResponse.setCustomizationFeePending(feePending);
 
-            // 3. Calculate line total = quantity × appliedTierPrice + customizationFee
+            customizationFeeConfirmedTotal = customizationFeeConfirmedTotal.add(feeConfirmed);
+            customizationFeePendingTotal = customizationFeePendingTotal.add(feePending);
+
+            // 4. Customization details (populate totalFee)
+            if (detailResponse.getCustomizations() != null) {
+                for (int i = 0; i < detail.getCustomizations().size(); i++) {
+                    OrderCustomization entity = detail.getCustomizations().get(i);
+                    OrderCustomizationResponse dto = detailResponse.getCustomizations().get(i);
+                    dto.setTotalFee(pricingService.calculateCustomizationTotalFee(entity, detail.getQuantity()));
+                    
+                    if (entity.getStatus() == CustomizationStatus.PENDING) {
+                        hasPending = true;
+                    }
+                }
+            }
+
+            // 5. Calculate line total = quantity * appliedTierPrice + feeConfirmed
             BigDecimal lineTotal = appliedTierPrice
                     .multiply(BigDecimal.valueOf(detail.getQuantity()))
-                    .add(customizationFee);
+                    .add(feeConfirmed);
             detailResponse.setLineTotal(lineTotal);
 
-            totalPrice = totalPrice.add(lineTotal);
             detailResponses.add(detailResponse);
         }
 
         response.setDetails(detailResponses);
-        response.setTotalPrice(totalPrice);
+        
+        // Populate order level breakdown
+        response.setBasePriceTotal(basePriceTotal);
+        response.setTierDiscountTotal(basePriceTotal.subtract(bulkOrder.getSubtotalAfterTier() != null ? bulkOrder.getSubtotalAfterTier() : BigDecimal.ZERO));
+        response.setCustomizationFeeConfirmed(customizationFeeConfirmedTotal);
+        response.setCustomizationFeePending(customizationFeePendingTotal);
+        response.setHasPendingCustomization(hasPending);
+
         return response;
     }
 
-    private BigDecimal lookupTierPrice(BulkOrderDetail detail) {
-        Optional<BulkPriceTier> matchedTier = bulkPriceTierRepository
-                .findTopByBulkOrderDetail_BulkOrderDetailIdAndMinQtyLessThanEqualOrderByMinQtyDesc(
-                        detail.getBulkOrderDetailId(), detail.getQuantity());
+    @Override
+    @Transactional
+    public BulkOrderResponse cancel(Integer id, String reason) {
+        BulkOrder bulkOrder = bulkOrderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found with id: " + id));
 
-        return matchedTier.map(BulkPriceTier::getUnitPrice)
-                .orElse(detail.getUnitPriceSnapshot() != null ? detail.getUnitPriceSnapshot() : BigDecimal.ZERO);
-    }
-
-    private BigDecimal calculateCustomizationFee(BulkOrderDetail detail) {
-        List<OrderCustomization> customizations = detail.getCustomizations();
-        if (customizations == null || customizations.isEmpty()) {
-            customizations = orderCustomizationRepository
-                    .findByBulkOrderDetail_BulkOrderDetailId(detail.getBulkOrderDetailId());
+        // Only allow cancellation for certain statuses
+        BulkOrderStatus currentStatus = bulkOrder.getStatus();
+        if (currentStatus != BulkOrderStatus.PENDING_REVIEW && 
+            currentStatus != BulkOrderStatus.CONFIRMED && 
+            currentStatus != BulkOrderStatus.AWAITING_PAYMENT) {
+            throw new IllegalStateException("Cannot cancel order in " + currentStatus + " status");
         }
 
-        return customizations.stream()
-                .filter(c -> c.getExtraFee() != null)
-                .map(OrderCustomization::getExtraFee)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private void recalculateTotalPrice(BulkOrder bulkOrder) {
-        List<BulkOrderDetail> details = bulkOrderDetailRepository
-                .findByBulkOrder_BulkOrderId(bulkOrder.getBulkOrderId());
-
-        BigDecimal totalPrice = BigDecimal.ZERO;
-        for (BulkOrderDetail detail : details) {
-            BigDecimal appliedTierPrice = lookupTierPrice(detail);
-            BigDecimal customizationFee = calculateCustomizationFee(detail);
-            BigDecimal lineTotal = appliedTierPrice
-                    .multiply(BigDecimal.valueOf(detail.getQuantity()))
-                    .add(customizationFee);
-            totalPrice = totalPrice.add(lineTotal);
-        }
-
-        bulkOrder.setTotalPrice(totalPrice);
+        // Reuse updateStatus logic which handles voucher release and status update
+        return updateStatus(id, BulkOrderStatus.CANCELLED, reason);
     }
 }

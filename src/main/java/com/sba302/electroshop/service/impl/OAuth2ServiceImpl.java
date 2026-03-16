@@ -108,6 +108,7 @@ class OAuth2ServiceImpl implements OAuth2Service {
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .role(user.getRole().getRoleName())
+                .companyId(user.getCompany() != null ? user.getCompany().getCompanyId() : null)
                 .build();
     }
 

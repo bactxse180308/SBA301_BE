@@ -8,6 +8,7 @@ import com.sba302.electroshop.service.ProductAttributeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,12 +30,15 @@ public class ProductAttributeController {
         return ApiResponse.success(productAttributeService.getByProduct(productId));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ProductAttributeResponse> create(@Valid @RequestBody CreateProductAttributeRequest request) {
         return ApiResponse.success(productAttributeService.create(request));
     }
 
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ApiResponse<ProductAttributeResponse> update(
             @PathVariable Integer id,
@@ -42,6 +46,7 @@ public class ProductAttributeController {
         return ApiResponse.success(productAttributeService.update(id, request));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {

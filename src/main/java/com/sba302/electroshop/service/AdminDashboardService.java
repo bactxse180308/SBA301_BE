@@ -16,4 +16,6 @@ public interface AdminDashboardService {
     List<CustomerGrowthResponse> getCustomerGrowth(Integer months);
     
     List<RecentOrderResponse> getRecentOrders(Integer limit);
+
+    BulkOrderStatsResponse getBulkOrderStats();
 }
