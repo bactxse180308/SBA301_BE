@@ -17,9 +17,14 @@ public class BulkOrderDetailResponse {
     private BigDecimal unitPriceSnapshot;
     private BigDecimal discountSnapshot;
     private BigDecimal appliedTierPrice;
-    private BigDecimal customizationFee;
+    private BigDecimal customizationFeeConfirmed;
+    private BigDecimal customizationFeePending;
     private BigDecimal lineTotal;
-    private List<BulkPriceTierResponse> priceTiers;
+
+    private String productImage;
+    private BigDecimal basePrice;
+    private String tierLabel;
+
     private List<OrderCustomizationResponse> customizations;
 }
 

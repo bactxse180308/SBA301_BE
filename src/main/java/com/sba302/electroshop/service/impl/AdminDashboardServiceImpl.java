@@ -30,6 +30,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final DailyStatisticRepository dailyStatisticRepository;
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
+    private final com.sba302.electroshop.repository.BulkOrderRepository bulkOrderRepository;
 
     @Override
     public DashboardKpiResponse getKpis() {
@@ -159,6 +160,41 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         if (limit == null || limit <= 0) limit = 5;
         Pageable topN = PageRequest.of(0, limit);
         return orderRepository.findRecentOrders(topN);
+    }
+
+    @Override
+    public BulkOrderStatsResponse getBulkOrderStats() {
+        log.info("Fetching bulk order stats");
+        
+        long pendingReview = bulkOrderRepository.countByStatus(com.sba302.electroshop.enums.BulkOrderStatus.PENDING_REVIEW);
+        long awaitingPayment = bulkOrderRepository.countByStatus(com.sba302.electroshop.enums.BulkOrderStatus.AWAITING_PAYMENT);
+        long processing = bulkOrderRepository.countByStatus(com.sba302.electroshop.enums.BulkOrderStatus.PROCESSING);
+        
+        // Today's new orders
+        LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
+        long newOrdersToday = bulkOrderRepository.countByCreatedAtAfter(startOfToday);
+        
+        // Monthly revenue
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endOfMonth = LocalDate.now().atTime(LocalTime.MAX);
+        
+        List<com.sba302.electroshop.enums.BulkOrderStatus> paidStatuses = List.of(
+                com.sba302.electroshop.enums.BulkOrderStatus.PAID,
+                com.sba302.electroshop.enums.BulkOrderStatus.PROCESSING,
+                com.sba302.electroshop.enums.BulkOrderStatus.SHIPPED,
+                com.sba302.electroshop.enums.BulkOrderStatus.COMPLETED
+        );
+        
+        BigDecimal revenueThisMonth = bulkOrderRepository.sumFinalPriceByStatusInAndCreatedAtBetween(paidStatuses, startOfMonth, endOfMonth);
+        if (revenueThisMonth == null) revenueThisMonth = BigDecimal.ZERO;
+        
+        return BulkOrderStatsResponse.builder()
+                .pendingReview(pendingReview)
+                .awaitingPayment(awaitingPayment)
+                .processing(processing)
+                .revenueThisMonth(revenueThisMonth)
+                .newOrdersToday(newOrdersToday)
+                .build();
     }
 
     private double calculatePercentageChange(double current, double previous) {

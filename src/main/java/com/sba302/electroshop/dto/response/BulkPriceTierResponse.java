@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 public class BulkPriceTierResponse {
     private Integer bulkPriceTierId;
     private Integer minQty;
+    private Integer maxQty;
     private BigDecimal unitPrice;
+    private Boolean isActive;
+    private Integer discountPercent;
 }
 

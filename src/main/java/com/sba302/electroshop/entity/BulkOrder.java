@@ -3,6 +3,7 @@ package com.sba302.electroshop.entity;
 import com.sba302.electroshop.enums.BulkOrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,24 +34,45 @@ public class BulkOrder {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50)
     private BulkOrderStatus status;
 
-    @Column(name = "total_price")
-    private BigDecimal totalPrice;
+    @Column(name = "subtotal_after_tier", precision = 19, scale = 2)
+    private BigDecimal subtotalAfterTier;
 
-    @Column(name = "discount_code", length = 50)
-    private String discountCode;
+    @Column(name = "voucher_code", length = 50)
+    private String voucherCode;
 
-    @Column(name = "discount_percentage", precision = 5, scale = 2)
-    private BigDecimal discountPercentage;
+    @Column(name = "voucher_type", length = 20)
+    private String voucherType;
 
-    @Column(name = "discount_amount", precision = 19, scale = 2)
-    private BigDecimal discountAmount;
+    @Column(name = "voucher_discount_amount", precision = 19, scale = 2)
+    private BigDecimal voucherDiscountAmount;
+
+    @Column(name = "shipping_fee", precision = 19, scale = 2)
+    private BigDecimal shippingFee;
+
+    @Column(name = "shipping_fee_waived")
+    @Builder.Default
+    private Boolean shippingFeeWaived = false;
 
     @Column(name = "final_price", precision = 19, scale = 2)
     private BigDecimal finalPrice;
+
+    @Column(name = "cancel_reason", length = 500)
+    private String cancelReason;
+
+    @Nationalized
+    @Column(name = "shipping_address", length = 1000)
+    private String shippingAddress;
+
+    @Nationalized
+    @Column(name = "admin_note", length = 2000)
+    private String adminNote;
 
     @Column(name = "discount_applied")
     @Builder.Default

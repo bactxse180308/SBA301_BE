@@ -18,11 +18,29 @@ public class BulkOrderResponse {
     private String companyName;
     private LocalDateTime createdAt;
     private String status;
-    private BigDecimal totalPrice;
-    private String discountCode;
-    private BigDecimal discountPercentage;
-    private BigDecimal discountAmount;
+    private BigDecimal subtotalAfterTier;
+    private String voucherCode;
+    private String voucherType;
+    private BigDecimal voucherDiscountAmount;
+    private BigDecimal shippingFee;
+    private Boolean shippingFeeWaived;
     private BigDecimal finalPrice;
+    private String cancelReason;
     private Boolean discountApplied;
+    private LocalDateTime updatedAt;
+    private String shippingAddress;
+    private String userEmail;
+    private String userPhone;
+    private String adminNote;
+
+    // Breakdown fields
+    private BigDecimal basePriceTotal;
+    private BigDecimal tierDiscountTotal;
+    private BigDecimal customizationFeeConfirmed;
+    private BigDecimal customizationFeePending;
+
+    // UI flags
+    private Boolean hasPendingCustomization;
+
     private List<BulkOrderDetailResponse> details;
 }

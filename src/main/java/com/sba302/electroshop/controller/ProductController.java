@@ -41,6 +41,20 @@ public class ProductController {
         return ApiResponse.success(productService.search(q, null, null, pageable));
     }
 
+    @GetMapping("/company/{id}")
+    public ApiResponse<com.sba302.electroshop.dto.response.CompanyProductResponse> getCompanyById(@PathVariable Integer id) {
+        return ApiResponse.success(productService.getCompanyProductById(id));
+    }
+
+    @GetMapping("/company/search")
+    public ApiResponse<Page<com.sba302.electroshop.dto.response.CompanyProductResponse>> searchForCompany(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) Integer brandId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.success(productService.searchForCompany(keyword, categoryId, brandId, pageable));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {

@@ -4,11 +4,15 @@ import com.sba302.electroshop.config.VNPayProperties;
 import com.sba302.electroshop.config.VNPayUtil;
 import com.sba302.electroshop.dto.response.PaymentTransactionResponse;
 import com.sba302.electroshop.dto.response.VNPayPaymentUrlResponse;
+import com.sba302.electroshop.entity.BulkOrder;
 import com.sba302.electroshop.entity.Order;
 import com.sba302.electroshop.entity.PaymentTransaction;
+import com.sba302.electroshop.enums.BulkOrderStatus;
 import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.enums.PaymentStatus;
+import com.sba302.electroshop.enums.PaymentType;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
+import com.sba302.electroshop.repository.BulkOrderRepository;
 import com.sba302.electroshop.repository.OrderRepository;
 import com.sba302.electroshop.repository.PaymentTransactionRepository;
 import com.sba302.electroshop.service.VNPayService;
@@ -31,25 +35,48 @@ public class VNPayServiceImpl implements VNPayService {
 
     private final VNPayProperties vnPayProperties;
     private final OrderRepository orderRepository;
+    private final BulkOrderRepository bulkOrderRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
 
     @Override
     @Transactional
-    public VNPayPaymentUrlResponse createPaymentUrl(Integer orderId, String ipAddr) {
-        log.info("Creating VNPay payment URL for orderId={}, ipAddr={}", orderId, ipAddr);
+    public VNPayPaymentUrlResponse createPaymentUrl(Integer orderId, String ipAddr, PaymentType type) {
+        log.info("Creating VNPay payment URL for orderId={}, type={}, ipAddr={}", orderId, type, ipAddr);
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+        BigDecimal totalAmount;
+        Order normalOrder = null;
+        BulkOrder bulkOrder = null;
 
-        if (order.getTotalAmount() == null || order.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Order total amount is invalid: " + order.getTotalAmount());
+        if (type == PaymentType.BULK) {
+            bulkOrder = bulkOrderRepository.findById(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("BulkOrder not found with id: " + orderId));
+
+            // Chỉ cho phép tạo url thanh toán khi đang ở trạng thái AWAITING_PAYMENT
+            if (bulkOrder.getStatus() != BulkOrderStatus.AWAITING_PAYMENT) {
+                throw new IllegalStateException(
+                        "BulkOrder is not in AWAITING_PAYMENT status. Current: " + bulkOrder.getStatus());
+            }
+
+            totalAmount = bulkOrder.getFinalPrice();
+        } else {
+            // NORMAL order
+            normalOrder = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+            totalAmount = normalOrder.getTotalAmount();
+        }
+
+        if (totalAmount == null || totalAmount.compareTo(BigDecimal.valueOf(5000)) < 0) {
+            throw new IllegalArgumentException("Order total amount is invalid: " + totalAmount);
         }
 
         String txnRef = VNPayUtil.generateTxnRef(orderId);
-        // VNPay amount = totalAmount * 100 (đơn vị VND, không có phần thập phân)
-        long vnpAmount = order.getTotalAmount().multiply(BigDecimal.valueOf(100)).longValue();
+        long vnpAmount = totalAmount.multiply(BigDecimal.valueOf(100)).longValue();
         String createDate = VNPayUtil.formatDate(LocalDateTime.now());
         String expireDate = VNPayUtil.formatDate(LocalDateTime.now().plusMinutes(15));
+
+        String orderInfo = (type == PaymentType.BULK)
+                ? "Thanh toan don hang si " + orderId
+                : "Thanh toan don hang " + orderId;
 
         Map<String, String> params = new HashMap<>();
         params.put("vnp_Version", vnPayProperties.getVersion());
@@ -58,7 +85,7 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_Amount", String.valueOf(vnpAmount));
         params.put("vnp_CurrCode", "VND");
         params.put("vnp_TxnRef", txnRef);
-        params.put("vnp_OrderInfo", "Thanh toan don hang " + orderId);
+        params.put("vnp_OrderInfo", orderInfo);
         params.put("vnp_OrderType", vnPayProperties.getOrderType());
         params.put("vnp_Locale", vnPayProperties.getLocale());
         params.put("vnp_ReturnUrl", vnPayProperties.getReturnUrl());
@@ -66,18 +93,19 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_CreateDate", createDate);
         params.put("vnp_ExpireDate", expireDate);
 
-        // Tạo secure hash
         String hashData = VNPayUtil.buildHashData(params);
         String secureHash = VNPayUtil.hmacSHA512(vnPayProperties.getHashSecret(), hashData);
         params.put("vnp_SecureHash", secureHash);
 
         String paymentUrl = vnPayProperties.getPaymentUrl() + "?" + VNPayUtil.buildQueryString(params);
 
-        // Lưu transaction với trạng thái PENDING
+        // Lưu transaction, gán order hoặc bulkOrder tương ứng
         PaymentTransaction transaction = PaymentTransaction.builder()
                 .txnRef(txnRef)
-                .order(order)
-                .amount(order.getTotalAmount())
+                .order(normalOrder)       // null nếu là BULK
+                .bulkOrder(bulkOrder)     // null nếu là NORMAL
+                .amount(totalAmount)
+                .paymentType(type)
                 .status(PaymentStatus.PENDING)
                 .secureHash(secureHash)
                 .createdAt(LocalDateTime.now())
@@ -85,7 +113,7 @@ public class VNPayServiceImpl implements VNPayService {
                 .build();
         paymentTransactionRepository.save(transaction);
 
-        log.info("VNPay payment URL created. txnRef={}", txnRef);
+        log.info("VNPay payment URL created. txnRef={}, type={}", txnRef, type);
         return VNPayPaymentUrlResponse.builder()
                 .paymentUrl(paymentUrl)
                 .txnRef(txnRef)
@@ -101,7 +129,6 @@ public class VNPayServiceImpl implements VNPayService {
 
         Map<String, String> result = new HashMap<>();
 
-        // 1. Verify secure hash
         String receivedHash = params.get("vnp_SecureHash");
         if (!verifySecureHash(params, receivedHash)) {
             log.warn("VNPay IPN: Invalid signature for txnRef={}", params.get("vnp_TxnRef"));
@@ -120,10 +147,7 @@ public class VNPayServiceImpl implements VNPayService {
         String payDate = params.get("vnp_PayDate");
         String vnpAmount = params.get("vnp_Amount");
 
-        // 2. Tìm transaction
-        PaymentTransaction transaction = paymentTransactionRepository.findByTxnRef(txnRef)
-                .orElse(null);
-
+        PaymentTransaction transaction = paymentTransactionRepository.findByTxnRef(txnRef).orElse(null);
         if (transaction == null) {
             log.warn("VNPay IPN: Transaction not found for txnRef={}", txnRef);
             result.put("RspCode", "01");
@@ -131,26 +155,21 @@ public class VNPayServiceImpl implements VNPayService {
             return result;
         }
 
-        // 3. Kiểm tra đã xử lý chưa (idempotency)
         if (transaction.getStatus() != PaymentStatus.PENDING) {
-            log.warn("VNPay IPN: Transaction already processed. txnRef={}, status={}",
-                    txnRef, transaction.getStatus());
+            log.warn("VNPay IPN: Transaction already processed. txnRef={}, status={}", txnRef, transaction.getStatus());
             result.put("RspCode", "02");
             result.put("Message", "Transaction already confirmed");
             return result;
         }
 
-        // 4. Kiểm tra số tiền
         long expectedAmount = transaction.getAmount().multiply(BigDecimal.valueOf(100)).longValue();
         if (vnpAmount != null && !String.valueOf(expectedAmount).equals(vnpAmount)) {
-            log.warn("VNPay IPN: Amount mismatch. txnRef={}, expected={}, received={}",
-                    txnRef, expectedAmount, vnpAmount);
+            log.warn("VNPay IPN: Amount mismatch. txnRef={}, expected={}, received={}", txnRef, expectedAmount, vnpAmount);
             result.put("RspCode", "04");
             result.put("Message", "Invalid amount");
             return result;
         }
 
-        // 5. Cập nhật transaction
         transaction.setResponseCode(responseCode);
         transaction.setTransactionStatus(transactionStatus);
         transaction.setTransactionNo(transactionNo);
@@ -161,26 +180,42 @@ public class VNPayServiceImpl implements VNPayService {
         transaction.setUpdatedAt(LocalDateTime.now());
 
         boolean isSuccess = "00".equals(responseCode) && "00".equals(transactionStatus);
-        if (isSuccess) {
-            transaction.setStatus(PaymentStatus.SUCCESS);
-            // Cập nhật order status
-            Order order = transaction.getOrder();
-            order.setOrderStatus(OrderStatus.CONFIRMED);
-            order.setPaymentMethod("VNPAY");
-            order.setPaymentStatus(PaymentStatus.SUCCESS);
-            orderRepository.save(order);
-            log.info("VNPay IPN: Payment success. txnRef={}, orderId={}", txnRef, order.getOrderId());
+
+        if (transaction.getPaymentType() == PaymentType.BULK) {
+            // --- Xử lý BulkOrder ---
+            BulkOrder bulkOrder = transaction.getBulkOrder();
+            if (isSuccess) {
+                transaction.setStatus(PaymentStatus.SUCCESS);
+                bulkOrder.setStatus(BulkOrderStatus.PAID);
+                bulkOrderRepository.save(bulkOrder);
+                log.info("VNPay IPN: BulkOrder payment success. txnRef={}, bulkOrderId={}", txnRef, bulkOrder.getBulkOrderId());
+            } else {
+                transaction.setStatus(PaymentStatus.FAILED);
+                // Trả lại AWAITING_PAYMENT để user có thể thử lại
+                bulkOrder.setStatus(BulkOrderStatus.AWAITING_PAYMENT);
+                bulkOrderRepository.save(bulkOrder);
+                log.info("VNPay IPN: BulkOrder payment failed. txnRef={}, responseCode={}", txnRef, responseCode);
+            }
         } else {
-            transaction.setStatus(PaymentStatus.FAILED);
+            // --- Xử lý Normal Order ---
             Order order = transaction.getOrder();
-            order.setOrderStatus(OrderStatus.CANCELLED);
-            order.setPaymentStatus(PaymentStatus.FAILED);
-            orderRepository.save(order);
-            log.info("VNPay IPN: Payment failed. txnRef={}, responseCode={}", txnRef, responseCode);
+            if (isSuccess) {
+                transaction.setStatus(PaymentStatus.SUCCESS);
+                order.setOrderStatus(OrderStatus.CONFIRMED);
+                order.setPaymentMethod("VNPAY");
+                order.setPaymentStatus(PaymentStatus.SUCCESS);
+                orderRepository.save(order);
+                log.info("VNPay IPN: Normal order payment success. txnRef={}, orderId={}", txnRef, order.getOrderId());
+            } else {
+                transaction.setStatus(PaymentStatus.FAILED);
+                order.setOrderStatus(OrderStatus.CANCELLED);
+                order.setPaymentStatus(PaymentStatus.FAILED);
+                orderRepository.save(order);
+                log.info("VNPay IPN: Normal order payment failed. txnRef={}, responseCode={}", txnRef, responseCode);
+            }
         }
 
         paymentTransactionRepository.save(transaction);
-
         result.put("RspCode", "00");
         result.put("Message", "Confirm Success");
         return result;
@@ -214,18 +249,31 @@ public class VNPayServiceImpl implements VNPayService {
             transaction.setUpdatedAt(LocalDateTime.now());
 
             boolean isSuccess = "00".equals(responseCode) && "00".equals(transactionStatus);
-            if (isSuccess) {
-                transaction.setStatus(PaymentStatus.SUCCESS);
-                Order order = transaction.getOrder();
-                order.setOrderStatus(OrderStatus.CONFIRMED);
-                order.setPaymentMethod("VNPAY");
-                order.setPaymentStatus(PaymentStatus.SUCCESS);
-                orderRepository.save(order);
+
+            if (transaction.getPaymentType() == PaymentType.BULK) {
+                BulkOrder bulkOrder = transaction.getBulkOrder();
+                if (isSuccess) {
+                    transaction.setStatus(PaymentStatus.SUCCESS);
+                    bulkOrder.setStatus(BulkOrderStatus.PAID);
+                    bulkOrderRepository.save(bulkOrder);
+                } else {
+                    transaction.setStatus(PaymentStatus.FAILED);
+                    bulkOrder.setStatus(BulkOrderStatus.AWAITING_PAYMENT);
+                    bulkOrderRepository.save(bulkOrder);
+                }
             } else {
-                transaction.setStatus(PaymentStatus.FAILED);
                 Order order = transaction.getOrder();
-                order.setPaymentStatus(PaymentStatus.FAILED);
-                orderRepository.save(order);
+                if (isSuccess) {
+                    transaction.setStatus(PaymentStatus.SUCCESS);
+                    order.setOrderStatus(OrderStatus.CONFIRMED);
+                    order.setPaymentMethod("VNPAY");
+                    order.setPaymentStatus(PaymentStatus.SUCCESS);
+                    orderRepository.save(order);
+                } else {
+                    transaction.setStatus(PaymentStatus.FAILED);
+                    order.setPaymentStatus(PaymentStatus.FAILED);
+                    orderRepository.save(order);
+                }
             }
             paymentTransactionRepository.save(transaction);
         }
@@ -244,9 +292,6 @@ public class VNPayServiceImpl implements VNPayService {
 
     // ======================== PRIVATE HELPERS ========================
 
-    /**
-     * Verify VNPay secure hash: loại bỏ vnp_SecureHash khỏi params rồi tính lại
-     */
     private boolean verifySecureHash(Map<String, String> params, String receivedHash) {
         if (receivedHash == null || receivedHash.isEmpty()) return false;
 
@@ -261,10 +306,17 @@ public class VNPayServiceImpl implements VNPayService {
     }
 
     private PaymentTransactionResponse toResponse(PaymentTransaction t) {
+        Integer orderId = null;
+        if (t.getPaymentType() == PaymentType.BULK) {
+            orderId = t.getBulkOrder() != null ? t.getBulkOrder().getBulkOrderId() : null;
+        } else {
+            orderId = t.getOrder() != null ? t.getOrder().getOrderId() : null;
+        }
+
         return PaymentTransactionResponse.builder()
                 .id(t.getId())
                 .txnRef(t.getTxnRef())
-                .orderId(t.getOrder() != null ? t.getOrder().getOrderId() : null)
+                .orderId(orderId)
                 .amount(t.getAmount())
                 .bankCode(t.getBankCode())
                 .bankTranNo(t.getBankTranNo())
@@ -279,4 +331,3 @@ public class VNPayServiceImpl implements VNPayService {
                 .build();
     }
 }
-

@@ -2,6 +2,7 @@ package com.sba302.electroshop.service.impl;
 
 import com.sba302.electroshop.dto.request.CreateVoucherRequest;
 import com.sba302.electroshop.dto.request.UpdateVoucherRequest;
+import com.sba302.electroshop.dto.response.VoucherApplicationResult;
 import com.sba302.electroshop.dto.response.VoucherResponse;
 import com.sba302.electroshop.entity.User;
 import com.sba302.electroshop.entity.UserVoucher;
@@ -253,6 +254,19 @@ class VoucherServiceImpl implements VoucherService {
     }
 
     @Override
+    public VoucherApplicationResult applyVoucher(String code, Integer userId, BigDecimal subtotal) {
+        UserVoucher userVoucher = validateAndGetVoucher(code, userId, subtotal);
+        BigDecimal discount = calculateDiscount(userVoucher.getVoucher(), subtotal);
+
+        return VoucherApplicationResult.builder()
+                .userVoucher(userVoucher)
+                .voucherCode(code)
+                .voucherType(userVoucher.getVoucher().getDiscountType().name())
+                .discountAmount(discount)
+                .build();
+    }
+
+    @Override
     @Transactional
     public void markVoucherAsUsed(Integer userVoucherId) {
         UserVoucher userVoucher = userVoucherRepository.findById(userVoucherId)
@@ -280,6 +294,28 @@ class VoucherServiceImpl implements VoucherService {
     public void releaseVoucher(Integer userVoucherId) {
         UserVoucher userVoucher = userVoucherRepository.findById(userVoucherId)
                 .orElseThrow(() -> new IllegalArgumentException("UserVoucher not found."));
+
+        if (userVoucher.getStatus() != VoucherStatus.USED) {
+            log.warn("Voucher is not in USED status, status={}", userVoucher.getStatus());
+            return;
+        }
+
+        userVoucher.setStatus(VoucherStatus.AVAILABLE);
+        userVoucher.setUsedAt(null);
+        userVoucherRepository.save(userVoucher);
+
+        Voucher voucher = userVoucher.getVoucher();
+        if (voucher.getUsedCount() != null && voucher.getUsedCount() > 0) {
+            voucher.setUsedCount(voucher.getUsedCount() - 1);
+            voucherRepository.save(voucher);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void releaseVoucher(Integer userId, String voucherCode) {
+        UserVoucher userVoucher = userVoucherRepository.findByUser_UserIdAndVoucher_VoucherCode(userId, voucherCode)
+                .orElseThrow(() -> new IllegalArgumentException("UserVoucher not found for the given user and voucher code."));
 
         if (userVoucher.getStatus() != VoucherStatus.USED) {
             log.warn("Voucher is not in USED status, status={}", userVoucher.getStatus());

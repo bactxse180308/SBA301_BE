@@ -15,4 +15,5 @@ public class AuthResponse {
     private String accessToken;
     private String refreshToken;
     private Long expiresIn; // in seconds
+    private Integer companyId;
 }

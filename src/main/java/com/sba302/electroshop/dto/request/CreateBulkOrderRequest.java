@@ -11,11 +11,13 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateBulkOrderRequest {
 
-    @NotNull(message = "Company ID is required")
-    private Integer companyId;
 
     @Size(max = 50, message = "Voucher code must not exceed 50 characters")
     private String voucherCode; // optional
+
+    @NotBlank(message = "Shipping address is required")
+    @Size(max = 500)
+    private String shippingAddress;
 
     @NotEmpty(message = "Bulk order must have at least one item")
     @Valid
@@ -33,5 +35,8 @@ public class CreateBulkOrderRequest {
         @NotNull(message = "Quantity is required")
         @Min(value = 1, message = "Quantity must be at least 1")
         private Integer quantity;
+
+        @Valid
+        private List<CreateCustomizationRequest> customizations;
     }
 }

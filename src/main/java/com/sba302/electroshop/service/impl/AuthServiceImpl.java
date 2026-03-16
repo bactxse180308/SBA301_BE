@@ -88,6 +88,7 @@ public class AuthServiceImpl implements AuthService {
                                 .accessToken(accessToken)
                                 .refreshToken(refreshToken)
                                 .expiresIn(3600L) // 1 hour in seconds
+                                .companyId(user.getCompany() != null ? user.getCompany().getCompanyId() : null)
                                 .build();
         }
 
@@ -135,6 +136,7 @@ public class AuthServiceImpl implements AuthService {
                                 .accessToken(accessToken)
                                 .refreshToken(refreshToken)
                                 .expiresIn(3600L) // 1 hour in seconds
+                                .companyId(user.getCompany() != null ? user.getCompany().getCompanyId() : null)
                                 .build();
         }
 

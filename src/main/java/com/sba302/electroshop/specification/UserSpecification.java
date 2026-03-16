@@ -12,7 +12,7 @@ import jakarta.persistence.criteria.Predicate;
 
 public class UserSpecification {
 
-    public static Specification<User> filterUsers(String email, String phoneNumber, UserStatus status) {
+    public static Specification<User> filterUsers(String email, String phoneNumber, UserStatus status, String roleName) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -32,6 +32,10 @@ public class UserSpecification {
 
             if (status != null) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            if (roleName != null && !roleName.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("role").get("roleName"), roleName));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

@@ -27,6 +27,18 @@ public interface ProductMapper {
     @Mapping(target = "imageUrls", expression = "java(mapMediaToUrls(product.getMediaItems()))")
     ProductResponse toResponse(Product product);
 
+    @Mapping(source = "category.categoryId", target = "categoryId")
+    @Mapping(source = "category.categoryName", target = "categoryName")
+    @Mapping(source = "brand.brandId", target = "brandId")
+    @Mapping(source = "brand.brandName", target = "brandName")
+    @Mapping(source = "supplier.supplierId", target = "supplierId")
+    @Mapping(source = "supplier.supplierName", target = "supplierName")
+    @Mapping(target = "imageUrls", expression = "java(mapMediaToUrls(product.getMediaItems()))")
+    @Mapping(source = "priceTiers", target = "priceTiers")
+    com.sba302.electroshop.dto.response.CompanyProductResponse toCompanyResponse(Product product);
+
+    com.sba302.electroshop.dto.response.BulkPriceTierResponse toTierResponse(com.sba302.electroshop.entity.BulkPriceTier tier);
+
     default java.util.List<String> mapMediaToUrls(java.util.List<com.sba302.electroshop.entity.Media> mediaItems) {
         if (mediaItems == null) return null;
         return mediaItems.stream()

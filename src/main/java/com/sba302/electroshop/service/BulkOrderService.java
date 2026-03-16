@@ -7,6 +7,7 @@ import com.sba302.electroshop.enums.BulkOrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public interface BulkOrderService {
@@ -19,9 +20,15 @@ public interface BulkOrderService {
 
     BulkOrderResponse create(Integer userId, CreateBulkOrderRequest request);
 
-    BulkOrderResponse updateStatus(Integer id, BulkOrderStatus status);
+    BulkOrderResponse updateStatus(Integer id, BulkOrderStatus status, String note);
 
     BulkOrderResponse addCustomization(Integer bulkOrderDetailId, CreateCustomizationRequest request);
 
     BulkOrderResponse getPriceBreakdown(Integer bulkOrderId);
+
+    BulkOrderResponse reviewCustomization(Integer customizationId, String status, BigDecimal extraFee, String feeType);
+
+    BulkOrderResponse updateShippingFee(Integer id, BigDecimal shippingFee);
+
+    BulkOrderResponse cancel(Integer id, String reason);
 }

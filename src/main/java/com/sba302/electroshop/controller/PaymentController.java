@@ -3,6 +3,7 @@ package com.sba302.electroshop.controller;
 import com.sba302.electroshop.dto.response.ApiResponse;
 import com.sba302.electroshop.dto.response.PaymentTransactionResponse;
 import com.sba302.electroshop.dto.response.VNPayPaymentUrlResponse;
+import com.sba302.electroshop.enums.PaymentType;
 import com.sba302.electroshop.service.VNPayService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,9 +28,10 @@ public class PaymentController {
     @PostMapping("/vnpay/create")
     public ApiResponse<VNPayPaymentUrlResponse> createPayment(
             @RequestParam Integer orderId,
+            @RequestParam(defaultValue = "NORMAL") PaymentType type,
             HttpServletRequest request) {
         String ipAddr = getClientIp(request);
-        VNPayPaymentUrlResponse response = vnPayService.createPaymentUrl(orderId, ipAddr);
+        VNPayPaymentUrlResponse response = vnPayService.createPaymentUrl(orderId, ipAddr, type);
         return ApiResponse.success(response);
     }
 

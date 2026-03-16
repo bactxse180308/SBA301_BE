@@ -37,4 +37,11 @@ public class OrderCustomization {
 
     @Column(name = "extra_fee")
     private BigDecimal extraFee;
+
+    @Column(name = "fee_type", length = 20)
+    private String feeType; // PER_UNIT or FIXED
+
+    @Nationalized
+    @Column(name = "admin_note", length = 2000)
+    private String adminNote;
 }

@@ -2,6 +2,7 @@ package com.sba302.electroshop.service;
 
 import com.sba302.electroshop.dto.request.CreateVoucherRequest;
 import com.sba302.electroshop.dto.request.UpdateVoucherRequest;
+import com.sba302.electroshop.dto.response.VoucherApplicationResult;
 import com.sba302.electroshop.dto.response.VoucherResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,10 @@ public interface VoucherService {
     void markVoucherAsUsed(Integer userVoucherId);
 
     void releaseVoucher(Integer userVoucherId);
+
+    void releaseVoucher(Integer userId, String voucherCode);
+
+    VoucherApplicationResult applyVoucher(String code, Integer userId, BigDecimal subtotal);
 
     void delete(Integer id);
 }
