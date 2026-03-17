@@ -490,6 +490,16 @@ INSERT [dbo].[product] ([product_id], [created_date], [description], [descriptio
 <h3><strong>Pin sử dụng 12 giờ cùng kháng nước chuẩn IP67</strong></h3>
 <p><strong>Loa bluetooth Sony ULT Field 1 sở hữu viên pin dung lượng cho phép mang lại thời gian sử dụng đến 12 giờ. Cùng với đó với cổng sạc USB-C nhờ đó người dùng có thể dễ dàng tìm kiếm phụ kiện để sạc pin một cách tiện lợi. Loa cũng được trang bị khả năng kháng nước IP67 nhờ đó người dùng có thể sử dụng loa trong các bữa tiệc ngoài trời như tại công viên hay hồ bơi.</strong></p>
 <p><strong><img src="https://cdn2.cellphones.com.vn/insecure/rs:fill:0:0/q:100/plain/https://cellphones.com.vn/media/wysiwyg/Loa/Sony/loa-bluetooth-sony-ult-field-1-2.jpg" alt="Kháng nước loa Sony ULT Field 1"></strong></p>', 20, N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/0cd0ce4e-b133-4970-baaa-e03733200e41_01_6_5.webp', CAST(2500000.00 AS Numeric(38, 2)), CAST(2000000.00 AS Numeric(38, 2)), N'Loa Bluetooth Sony ULT Field 1', 0, 0, N'AVAILABLE', 9, 9, 4)
+INSERT [dbo].[product] ([product_id], [created_date], [description], [description_details], [discount_percent], [main_image], [original_price], [price], [product_name], [rating], [sold_count], [status], [brand_id], [category_id], [supplier_id]) VALUES (42, CAST(N'2026-03-17T01:32:51.9474651' AS DateTime2), NULL, N'<h2><strong>Sạc Anker Zolo B2697 3C1A 140W kèm cáp USB-C - Sạc ổn định, kèm cáp tiện lợi</strong></h2>
+<p><strong>Sạc Anker Zolo B2697 kèm cáp USB-C là giải pháp mạnh mẽ cho những ai cần một bộ </strong><a href="https://cellphones.com.vn/phu-kien/sac-dien-thoai/sac/sac-nhieu-cong.html" title="sạc nhiều cổng"><strong>sạc đa năng</strong></a><strong>, tốc độ cao. Đi kèm cáp USB-C 240W dài 1,5m, bộ sạc này đáp ứng nhu cầu sử dụng linh hoạt.&nbsp;</strong></p>
+<h3><strong>Đa dạng cổng sạc tiện lợi</strong></h3>
+<p><strong>Với ba cổng USB-C cùng 1 cổng USB-A với công suất tổng lên đến 140W, </strong><a href="https://cellphones.com.vn/phu-kien/sac-dien-thoai/sac/anker.html"><strong>cục sạc Anker</strong></a><strong> Zolo B2697 3C1A kèm cáp USB-C có khả năng sạc cho cả những thiết bị có dung lượng pin lớn. Chỉ mất 30 phút để sạc 50% pin, người dùng có thể tiết kiệm thời gian, đặc biệt là trong những tình huống cần sạc gấp.</strong></p>
+<p><strong><img src="https://cdn2.cellphones.com.vn/insecure/rs:fill:0:0/q:100/plain/https://cellphones.com.vn/media/wysiwyg/phu-kien/cu-sac/Anker/sac-anker-zolo-b2697-3c1a-140w-kem-cap-usb-c-1.jpg" alt="Công suất, khả năng tương thích của sạc Anker Zolo B2697 3C1A 140W kèm cáp USB-C"></strong></p>
+<p><strong>Ngoài ra, thiết kế hỗ trợ chuẩn PD 3.1 giúp bộ sạc tương thích với nhiều thiết bị hiện đại, đảm bảo hiệu suất tối ưu. Dù sử dụng để </strong><a href="https://cellphones.com.vn/phu-kien/may-tinh-laptop/sac-laptop.html" title="cục sạc laptop"><strong>sạc laptop</strong></a><strong>, tablet hay smartphone, Anker Zolo B2697 3C1A 140W đều mang lại tốc độ sạc nhanh và ổn định.&nbsp;</strong></p>
+<h3><strong>Công nghệ an toàn tiên tiến</strong></h3>
+<p><strong>Anker trang bị cho Zolo B2697 hệ thống ActiveShield 2.0, giúp giám sát nhiệt độ hơn 3 triệu lần mỗi ngày để đảm bảo an toàn tối đa cho thiết bị và người dùng. Cơ chế kiểm soát nhiệt độ thông minh giúp giảm thiểu nguy cơ quá nhiệt hay quá dòng, bảo vệ thiết bị khỏi các sự cố điện áp.</strong></p>
+<p><strong><img src="https://cdn2.cellphones.com.vn/insecure/rs:fill:0:0/q:100/plain/https://cellphones.com.vn/media/wysiwyg/phu-kien/cu-sac/Anker/sac-anker-zolo-b2697-3c1a-140w-kem-cap-usb-c-2.jpg" alt="Thiết kế, tính năng bổ sung của sạc Anker Zolo B2697 3C1A 140W kèm cáp USB-C"></strong></p>
+<p><strong>Ngoài ra, màn hình hiển thị màu sắc nét cung cấp thông tin chi tiết về trạng thái sạc, nhiệt độ và các cổng đang sử dụng. Nhờ đó, người dùng có thể theo dõi và kiểm soát quá trình nạp năng lượng trên Anker Zolo B2697 3C1A 140W.</strong></p>', NULL, N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/b2222829-5303-48df-bb38-8ba415c2e643_sac-anker-zolo-b2697-3c1a-140w-kem-cap-usb-c_6.webp', CAST(1500000.00 AS Numeric(38, 2)), CAST(1500000.00 AS Numeric(38, 2)), N'Sạc Anker Zolo 3C1A 140W kèm cáp USB-C B2697', 0, 0, N'AVAILABLE', 7, 7, 5)
 SET IDENTITY_INSERT [dbo].[product] OFF
 GO
 SET IDENTITY_INSERT [dbo].[company] ON
@@ -527,7 +537,7 @@ INSERT [dbo].[voucher] ([voucher_id], [description], [discount_type], [discount_
 INSERT [dbo].[voucher] ([voucher_id], [description], [discount_type], [discount_value], [is_active], [is_valid], [max_discount], [min_order_value], [usage_limit], [used_count], [valid_from], [valid_to], [voucher_code]) VALUES (7, N'Giảm 50k cho đơn từ 500k', N'FIXED', CAST(50000.00 AS Numeric(38, 2)), 1, 1, CAST(50000.00 AS Numeric(38, 2)), CAST(500000.00 AS Numeric(38, 2)), 500, 0, CAST(N'2026-01-01T00:00:00.0000000' AS DateTime2), CAST(N'2026-06-30T23:59:59.0000000' AS DateTime2), N'FLAT50K')
 INSERT [dbo].[voucher] ([voucher_id], [description], [discount_type], [discount_value], [is_active], [is_valid], [max_discount], [min_order_value], [usage_limit], [used_count], [valid_from], [valid_to], [voucher_code]) VALUES (8, N'Giảm 20% cho khách hàng mới', N'PERCENT', CAST(20.00 AS Numeric(38, 2)), 1, 1, CAST(100000.00 AS Numeric(38, 2)), CAST(0.00 AS Numeric(38, 2)), 200, 0, CAST(N'2026-01-01T00:00:00.0000000' AS DateTime2), CAST(N'2026-12-31T23:59:59.0000000' AS DateTime2), N'NEWUSER20')
 INSERT [dbo].[voucher] ([voucher_id], [description], [discount_type], [discount_value], [is_active], [is_valid], [max_discount], [min_order_value], [usage_limit], [used_count], [valid_from], [valid_to], [voucher_code]) VALUES (9, N'Khuyến mại hè 2026 - giảm 15%', N'PERCENT', CAST(15.00 AS Numeric(38, 2)), 1, 1, CAST(200000.00 AS Numeric(38, 2)), CAST(1000000.00 AS Numeric(38, 2)), 300, 0, CAST(N'2026-06-01T00:00:00.0000000' AS DateTime2), CAST(N'2026-08-31T23:59:59.0000000' AS DateTime2), N'SUMMER15')
-INSERT [dbo].[voucher] ([voucher_id], [description], [discount_type], [discount_value], [is_active], [is_valid], [max_discount], [min_order_value], [usage_limit], [used_count], [valid_from], [valid_to], [voucher_code]) VALUES (10, N'VIP giảm 100k', N'FIXED', CAST(100000.00 AS Numeric(38, 2)), 1, 1, CAST(100000.00 AS Numeric(38, 2)), CAST(2000000.00 AS Numeric(38, 2)), 100, 0, CAST(N'2026-01-01T00:00:00.0000000' AS DateTime2), CAST(N'2026-12-31T23:59:59.0000000' AS DateTime2), N'VIPFLAT100K')
+INSERT [dbo].[voucher] ([voucher_id], [description], [discount_type], [discount_value], [is_active], [is_valid], [max_discount], [min_order_value], [usage_limit], [used_count], [valid_from], [valid_to], [voucher_code]) VALUES (10, N'VIP giảm 100k', N'FIXED', CAST(100000.00 AS Numeric(38, 2)), 1, 0, CAST(100000.00 AS Numeric(38, 2)), CAST(2000000.00 AS Numeric(38, 2)), 100, 0, CAST(N'2026-01-01T00:00:00.0000000' AS DateTime2), CAST(N'2026-03-17T20:32:00.0000000' AS DateTime2), N'VIPFLAT100K')
 SET IDENTITY_INSERT [dbo].[voucher] OFF
 GO
 SET IDENTITY_INSERT [dbo].[user_voucher] ON
@@ -565,7 +575,7 @@ INSERT [dbo].[review] ([review_id], [comment], [rating], [reply_comment], [reply
 INSERT [dbo].[review] ([review_id], [comment], [rating], [reply_comment], [reply_date], [review_date], [product_id], [replied_by], [user_id]) VALUES (7, N'Sạc nhanh đúng chuẩn, dây cáp hơi ngắn một chút.', 4, NULL, NULL, CAST(N'2026-01-25T11:00:00.0000000' AS DateTime2), 17, NULL, 17)
 INSERT [dbo].[review] ([review_id], [comment], [rating], [reply_comment], [reply_date], [review_date], [product_id], [replied_by], [user_id]) VALUES (8, N'Chống ồn cực tốt, âm thanh tuyệt vời!', 5, NULL, NULL, CAST(N'2026-02-14T09:00:00.0000000' AS DateTime2), 20, NULL, 13)
 INSERT [dbo].[review] ([review_id], [comment], [rating], [reply_comment], [reply_date], [review_date], [product_id], [replied_by], [user_id]) VALUES (9, N'Chuột dùng cực sướng cho designer, nút cuộn rất thông minh.', 5, NULL, NULL, CAST(N'2026-02-22T14:00:00.0000000' AS DateTime2), 18, NULL, 14)
-INSERT [dbo].[review] ([review_id], [comment], [rating], [reply_comment], [reply_date], [review_date], [product_id], [replied_by], [user_id]) VALUES (10, N'Nhỏ gọn, gõ êm, kết nối đa thiết bị ổn định.', 5, NULL, NULL, CAST(N'2026-02-28T16:00:00.0000000' AS DateTime2), 19, NULL, 16)
+INSERT [dbo].[review] ([review_id], [comment], [rating], [reply_comment], [reply_date], [review_date], [product_id], [replied_by], [user_id]) VALUES (10, N'Nhỏ gọn, gõ êm, kết nối đa thiết bị ổn định.', 5, N'ok', CAST(N'2026-03-17T20:42:36.7789179' AS DateTime2), CAST(N'2026-02-28T16:00:00.0000000' AS DateTime2), 19, 18, 16)
 SET IDENTITY_INSERT [dbo].[review] OFF
 GO
 SET IDENTITY_INSERT [dbo].[shopping_cart] ON
@@ -690,6 +700,25 @@ INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], 
 INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (17, CAST(N'2025-01-01T08:00:00.0000000' AS DateTime2), 60, 5, 24)
 INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (18, CAST(N'2024-12-01T08:00:00.0000000' AS DateTime2), 200, 7, 25)
 INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (19, CAST(N'2024-06-01T08:00:00.0000000' AS DateTime2), 40, 8, 26)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (20, CAST(N'2026-03-17T20:56:54.5574645' AS DateTime2), 1112, 5, 42)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (21, CAST(N'2026-03-17T01:32:51.9859522' AS DateTime2), 0, 6, 42)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (22, CAST(N'2026-03-17T01:32:51.9859522' AS DateTime2), 0, 7, 42)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (23, CAST(N'2026-03-17T01:32:51.9859522' AS DateTime2), 0, 8, 42)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (24, CAST(N'2026-03-17T20:55:14.4215114' AS DateTime2), 100, 6, 27)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (25, CAST(N'2026-03-17T20:55:14.4471331' AS DateTime2), 100, 6, 28)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (26, CAST(N'2026-03-17T20:55:14.4506425' AS DateTime2), 111, 6, 29)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (27, CAST(N'2026-03-17T20:55:14.4527108' AS DateTime2), 111, 6, 30)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (28, CAST(N'2026-03-17T20:55:14.4547870' AS DateTime2), 1111, 6, 31)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (29, CAST(N'2026-03-17T20:55:14.4588345' AS DateTime2), 1111, 6, 32)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (30, CAST(N'2026-03-17T20:56:54.5317244' AS DateTime2), 1111, 5, 33)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (31, CAST(N'2026-03-17T20:56:54.5362868' AS DateTime2), 1101, 5, 34)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (32, CAST(N'2026-03-17T20:56:54.5378010' AS DateTime2), 111, 5, 35)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (33, CAST(N'2026-03-17T20:56:54.5413143' AS DateTime2), 127, 5, 36)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (34, CAST(N'2026-03-17T20:56:54.5433367' AS DateTime2), 122, 5, 37)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (35, CAST(N'2026-03-17T20:56:54.5458721' AS DateTime2), 1112, 5, 38)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (36, CAST(N'2026-03-17T20:56:54.5494041' AS DateTime2), 1112, 5, 39)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (37, CAST(N'2026-03-17T20:56:54.5514121' AS DateTime2), 121, 5, 40)
+INSERT [dbo].[branch_product_stock] ([branch_product_stock_id], [last_updated], [quantity], [branch_id], [product_id]) VALUES (38, CAST(N'2026-03-17T20:56:54.5554655' AS DateTime2), 1112, 5, 41)
 SET IDENTITY_INSERT [dbo].[branch_product_stock] OFF
 GO
 SET IDENTITY_INSERT [dbo].[bulk_price_tier] ON
@@ -807,7 +836,36 @@ INSERT [dbo].[media] ([media_id], [sort_order], [type], [url], [product_id]) VAL
 INSERT [dbo].[media] ([media_id], [sort_order], [type], [url], [product_id]) VALUES (116, 2, N'IMAGE', N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/8ff611b5-6a5c-4c21-9669-9a13aa24ded7_loa-bluetooth-sony-ult-field-1_1.webp', 41)
 INSERT [dbo].[media] ([media_id], [sort_order], [type], [url], [product_id]) VALUES (117, 1, N'IMAGE', N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/ddca7c2a-0e4a-4656-88f5-65af01b15b1f_02_2_2.webp', 41)
 INSERT [dbo].[media] ([media_id], [sort_order], [type], [url], [product_id]) VALUES (118, 0, N'IMAGE', N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/0cd0ce4e-b133-4970-baaa-e03733200e41_01_6_5.webp', 41)
+INSERT [dbo].[media] ([media_id], [sort_order], [type], [url], [product_id]) VALUES (119, 1, N'IMAGE', N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/2396eaa3-51d5-473b-b1d5-34eec76521e7_frame_2_54.webp', 42)
+INSERT [dbo].[media] ([media_id], [sort_order], [type], [url], [product_id]) VALUES (120, 0, N'IMAGE', N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/b2222829-5303-48df-bb38-8ba415c2e643_sac-anker-zolo-b2697-3c1a-140w-kem-cap-usb-c_6.webp', 42)
+INSERT [dbo].[media] ([media_id], [sort_order], [type], [url], [product_id]) VALUES (121, 2, N'IMAGE', N'https://pub-dd1bef83e9814f348c1ea975cca22e4f.r2.dev/elechoshop/others/ec5245eb-9c24-454e-b530-9772f1fbfb00_frame_2_53.webp', 42)
 SET IDENTITY_INSERT [dbo].[media] OFF
+GO
+SET IDENTITY_INSERT [dbo].[stock_transactions] ON
+
+INSERT [dbo].[stock_transactions] ([id], [created_date], [note], [type], [branch_id]) VALUES (1, CAST(N'2026-03-17T00:00:00.0000000' AS DateTime2), N'', N'IMPORT', 6)
+INSERT [dbo].[stock_transactions] ([id], [created_date], [note], [type], [branch_id]) VALUES (2, CAST(N'2026-03-17T00:00:00.0000000' AS DateTime2), N'', N'IMPORT', 5)
+SET IDENTITY_INSERT [dbo].[stock_transactions] OFF
+GO
+SET IDENTITY_INSERT [dbo].[stock_transaction_items] ON
+
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (1, CAST(1124250.00 AS Numeric(38, 2)), 100, 27, 1)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (2, CAST(1033500.00 AS Numeric(38, 2)), 100, 28, 1)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (3, CAST(442500.00 AS Numeric(38, 2)), 111, 29, 1)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (4, CAST(367500.00 AS Numeric(38, 2)), 111, 30, 1)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (5, CAST(742500.00 AS Numeric(38, 2)), 1111, 31, 1)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (6, CAST(312000.00 AS Numeric(38, 2)), 1111, 32, 1)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (7, CAST(1665000.00 AS Numeric(38, 2)), 1111, 33, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (8, CAST(1105000.00 AS Numeric(38, 2)), 1101, 34, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (9, CAST(1071000.00 AS Numeric(38, 2)), 111, 35, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (10, CAST(553000.00 AS Numeric(38, 2)), 127, 36, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (11, CAST(404100.00 AS Numeric(38, 2)), 122, 37, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (12, CAST(2250000.00 AS Numeric(38, 2)), 1112, 38, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (13, CAST(3600000.00 AS Numeric(38, 2)), 1112, 39, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (14, CAST(1192000.00 AS Numeric(38, 2)), 121, 40, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (15, CAST(2000000.00 AS Numeric(38, 2)), 1112, 41, 2)
+INSERT [dbo].[stock_transaction_items] ([id], [price], [quantity], [product_id], [transaction_id]) VALUES (16, CAST(1500000.00 AS Numeric(38, 2)), 1112, 42, 2)
+SET IDENTITY_INSERT [dbo].[stock_transaction_items] OFF
 GO
 SET IDENTITY_INSERT [dbo].[warranty] ON
 
