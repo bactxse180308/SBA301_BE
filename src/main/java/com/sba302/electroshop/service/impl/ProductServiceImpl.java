@@ -11,6 +11,7 @@ import com.sba302.electroshop.repository.CategoryRepository;
 import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.repository.BranchProductStockRepository;
 import com.sba302.electroshop.repository.SupplierRepository;
+import com.sba302.electroshop.repository.StoreBranchRepository;
 import com.sba302.electroshop.service.ProductService;
 import com.sba302.electroshop.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import com.sba302.electroshop.entity.BranchProductStock;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,6 +41,7 @@ class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final SupplierRepository supplierRepository;
     private final BranchProductStockRepository branchProductStockRepository;
+    private final StoreBranchRepository storeBranchRepository;
     private final ProductMapper productMapper;
 
     @Override
@@ -140,6 +143,19 @@ class ProductServiceImpl implements ProductService {
         }
 
         product = productRepository.save(product);
+
+        // Initialize stock for all branches
+        final Product savedProduct = product;
+        List<BranchProductStock> stocks = storeBranchRepository.findAll().stream()
+                .map(branch -> BranchProductStock.builder()
+                        .product(savedProduct)
+                        .branch(branch)
+                        .quantity(0)
+                        .lastUpdated(LocalDateTime.now())
+                        .build())
+                .collect(Collectors.toList());
+        branchProductStockRepository.saveAll(stocks);
+
         return productMapper.toResponse(product);
     }
 
