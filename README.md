@@ -290,12 +290,3 @@ docker-compose --profile monitoring up -d
 # Grafana: http://localhost:3000 (admin/admin)
 ```
 
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-> **Note:** This project is built with a production-grade mindset — prioritizing scalability, security, data consistency under high concurrency, and clean domain-driven design.
