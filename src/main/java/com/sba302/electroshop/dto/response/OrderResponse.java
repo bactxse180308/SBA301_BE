@@ -23,5 +23,6 @@ public class OrderResponse {
     private String paymentMethod;
     private String paymentStatus;
     private String voucherCode;
+    private String cancelReason;
     private List<OrderItemResponse> orderItems;
 }

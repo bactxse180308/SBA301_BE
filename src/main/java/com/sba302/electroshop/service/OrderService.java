@@ -18,6 +18,6 @@ public interface OrderService {
 
     OrderResponse updateStatus(Integer orderId, OrderStatus newStatus);
 
-    void cancelOrder(Integer orderId);
+    void cancelOrder(Integer orderId, String reason);
 
 }

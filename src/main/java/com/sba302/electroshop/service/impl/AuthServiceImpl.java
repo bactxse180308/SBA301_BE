@@ -14,8 +14,10 @@ import com.sba302.electroshop.repository.RoleRepository;
 import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.security.JwtUtil;
 import com.sba302.electroshop.service.AuthService;
+import com.sba302.electroshop.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,10 @@ public class AuthServiceImpl implements AuthService {
         private final RoleRepository roleRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtUtil jwtUtil;
+        private final EmailService emailService;
+
+        @Value("${app.api-base-url:http://localhost:8080}")
+        private String apiBaseUrl;
 
         @Override
         @Transactional
@@ -48,6 +55,9 @@ public class AuthServiceImpl implements AuthService {
                 Role customerRole = roleRepository.findByRoleName("CUSTOMER")
                                 .orElseThrow(() -> new ApiException("CUSTOMER role not found"));
 
+                // Generate verification token
+                String verificationToken = UUID.randomUUID().toString();
+
                 // Create new user (formerly Customer)
                 User user = User.builder()
                                 .email(request.getEmail())
@@ -55,40 +65,26 @@ public class AuthServiceImpl implements AuthService {
                                 .fullName(request.getFullName())
                                 .phoneNumber(request.getPhoneNumber())
                                 .role(customerRole)
-                                .status(UserStatus.ACTIVE)
+                                .status(UserStatus.PENDING)
+                                .isEmailVerified(false)
+                                .verificationToken(verificationToken)
                                 .rewardPoint(0)
                                 .registrationDate(LocalDateTime.now())
                                 .build();
 
                 user = userRepository.save(user);
 
-                log.info("User registered successfully with ID: {}", user.getUserId());
+                log.info("User registered successfully with ID: {}. Sending verification email.", user.getUserId());
 
-                // Generate tokens
-                List<String> roles = Collections.singletonList(user.getRole().getRoleName());
-                List<String> privileges = Collections.emptyList();
-
-                String accessToken = jwtUtil.generateAccessToken(
-                                user.getUserId(),
-                                user.getEmail(),
-                                roles,
-                                privileges);
-
-                String refreshToken = jwtUtil.generateRefreshToken(
-                                user.getUserId(),
-                                user.getEmail(),
-                                roles,
-                                privileges);
+                // Send verification email
+                String verificationUrl = apiBaseUrl + "/api/v1/auth/verify?token=" + verificationToken;
+                emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), verificationUrl);
 
                 return AuthResponse.builder()
                                 .userId(user.getUserId())
                                 .email(user.getEmail())
                                 .fullName(user.getFullName())
                                 .role(user.getRole().getRoleName())
-                                .accessToken(accessToken)
-                                .refreshToken(refreshToken)
-                                .expiresIn(3600L) // 1 hour in seconds
-                                .companyId(user.getCompany() != null ? user.getCompany().getCompanyId() : null)
                                 .build();
         }
 
@@ -100,9 +96,14 @@ public class AuthServiceImpl implements AuthService {
                 User user = userRepository.findByEmail(request.getEmail())
                                 .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
 
+                // Check if email is verified (Skip for ADMIN)
+                if (!"ADMIN".equals(user.getRole().getRoleName()) && !Boolean.TRUE.equals(user.getIsEmailVerified())) {
+                        throw new ApiException("Email not verified. Please check your inbox.");
+                }
+
                 // Check if user is active
                 if (user.getStatus() != UserStatus.ACTIVE) {
-                        throw new ApiException("Account is disabled");
+                        throw new ApiException("Account is disabled or pending.");
                 }
 
                 // Verify password
@@ -138,6 +139,22 @@ public class AuthServiceImpl implements AuthService {
                                 .expiresIn(3600L) // 1 hour in seconds
                                 .companyId(user.getCompany() != null ? user.getCompany().getCompanyId() : null)
                                 .build();
+        }
+
+        @Override
+        @Transactional
+        public void verifyEmail(String token) {
+                log.info("Verifying email with token: {}", token);
+
+                User user = userRepository.findByVerificationToken(token)
+                                .orElseThrow(() -> new ApiException("Invalid or expired verification token"));
+
+                user.setIsEmailVerified(true);
+                user.setStatus(UserStatus.ACTIVE);
+                user.setVerificationToken(null); // Clear the token
+
+                userRepository.save(user);
+                log.info("Email verified successfully for user: {}", user.getEmail());
         }
 
         @Override

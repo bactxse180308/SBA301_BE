@@ -63,7 +63,8 @@ public class BulkOrder {
     @Column(name = "final_price", precision = 19, scale = 2)
     private BigDecimal finalPrice;
 
-    @Column(name = "cancel_reason", length = 500)
+    @Nationalized
+    @Column(name = "cancel_reason")
     private String cancelReason;
 
     @Nationalized

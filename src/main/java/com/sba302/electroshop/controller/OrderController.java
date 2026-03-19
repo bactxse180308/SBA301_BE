@@ -49,8 +49,10 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/cancel")
-    public ApiResponse<Void> cancelOrder(@PathVariable Integer id) {
-        orderService.cancelOrder(id);
+    public ApiResponse<Void> cancelOrder(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String reason) {
+        orderService.cancelOrder(id, reason);
         return ApiResponse.success(null);
     }
 }

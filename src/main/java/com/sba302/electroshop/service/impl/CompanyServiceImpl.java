@@ -15,6 +15,7 @@ import com.sba302.electroshop.repository.CompanyRepository;
 import com.sba302.electroshop.repository.RoleRepository;
 import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.service.CompanyService;
+import com.sba302.electroshop.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +35,7 @@ class CompanyServiceImpl implements CompanyService {
     private final CompanyMapper companyMapper;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final EmailService emailService;
 
     @Override
     public CompanyResponse getById(Integer id) {
@@ -141,6 +143,11 @@ class CompanyServiceImpl implements CompanyService {
         }
 
         Company updatedCompany = companyRepository.save(company);
+        
+        if (status != CompanyStatus.PENDING) {
+            emailService.sendCompanyStatusEmail(updatedCompany, status);
+        }
+
         log.info("Company status updated to {} for id: {}", status, id);
         return companyMapper.toResponse(updatedCompany);
     }
