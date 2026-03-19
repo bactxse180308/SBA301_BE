@@ -13,6 +13,7 @@ import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.BulkOrderMapper;
 import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.BulkOrderService;
+import com.sba302.electroshop.service.EmailService;
 import com.sba302.electroshop.service.VoucherService;
 import com.sba302.electroshop.specification.BulkOrderSpecification;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ class BulkOrderServiceImpl implements BulkOrderService {
     private final BulkOrderMapper bulkOrderMapper;
     private final BulkOrderPricingService pricingService;
     private final VoucherService voucherService;
+    private final EmailService emailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -210,6 +212,15 @@ class BulkOrderServiceImpl implements BulkOrderService {
         }
 
         BulkOrder updated = bulkOrderRepository.save(bulkOrder);
+
+        // Send email notification for important status changes
+        if (status == BulkOrderStatus.AWAITING_PAYMENT || 
+            status == BulkOrderStatus.COMPLETED || 
+            status == BulkOrderStatus.CANCELLED || 
+            status == BulkOrderStatus.REJECTED) {
+            emailService.sendBulkOrderStatusEmail(updated, status);
+        }
+
         return buildFullResponse(updated);
     }
 

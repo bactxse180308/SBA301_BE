@@ -12,6 +12,7 @@ import com.sba302.electroshop.exception.ApiException;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.OrderMapper;
 import com.sba302.electroshop.repository.*;
+import com.sba302.electroshop.service.EmailService;
 import com.sba302.electroshop.service.OrderService;
 import com.sba302.electroshop.service.VoucherService;
 import com.sba302.electroshop.dto.response.VoucherApplicationResult;
@@ -42,6 +43,7 @@ class OrderServiceImpl implements OrderService {
     private final BranchProductStockRepository branchProductStockRepository;
     private final OrderMapper orderMapper;
     private final VoucherService voucherService;
+    private final EmailService emailService;
 
     // ================================================================
     // PUBLIC METHODS
@@ -135,15 +137,22 @@ class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
         order.setOrderStatus(newStatus);
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
-        return orderMapper.toResponse(order);
+        if (newStatus == OrderStatus.CONFIRMED) {
+            // Fetch details for email
+            List<OrderDetail> details = orderDetailRepository.findByOrderId(orderId);
+            savedOrder.setOrderDetails(details);
+            emailService.sendOrderConfirmationEmail(savedOrder);
+        }
+
+        return orderMapper.toResponse(savedOrder);
     }
 
     @Override
     @Transactional
-    public void cancelOrder(Integer orderId) {
-        log.info("Cancelling order: orderId={}", orderId);
+    public void cancelOrder(Integer orderId, String reason) {
+        log.info("Cancelling order: orderId={}, reason={}", orderId, reason);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
@@ -198,7 +207,11 @@ class OrderServiceImpl implements OrderService {
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setCancelReason(reason);
         orderRepository.save(order);
+        
+        emailService.sendOrderCancellationEmail(order, reason);
+        
         log.info("Order cancelled and resources restored: id={}", orderId);
     }
 

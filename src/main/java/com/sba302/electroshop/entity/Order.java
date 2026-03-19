@@ -36,6 +36,7 @@ public class Order {
     @Column(name = "total_amount")
     private BigDecimal totalAmount;
 
+    @Builder.Default
     @Column(name = "discount_amount")
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
@@ -63,4 +64,8 @@ public class Order {
 
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderDetail> orderDetails;
+
+    @Nationalized
+    @Column(name = "cancel_reason", length = 500)
+    private String cancelReason;
 }

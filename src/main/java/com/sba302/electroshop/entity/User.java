@@ -53,6 +53,12 @@ public class User {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    @Column(name = "is_email_verified", nullable = false)
+    private Boolean isEmailVerified = false;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company; // Chỉ có giá trị khi role = COMPANY, null với CUSTOMER/ADMIN
@@ -67,6 +73,9 @@ public class User {
         }
         if (status == null) {
             status = UserStatus.ACTIVE;
+        }
+        if (isEmailVerified == null) {
+            isEmailVerified = false;
         }
     }
 }

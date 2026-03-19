@@ -13,8 +13,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -24,6 +29,9 @@ public class AuthController {
 
     private final AuthService authService;
     private final OAuth2Service oauth2Service;
+
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
 
     @PostMapping("/oauth2/google")
     @Operation(summary = "Login with Google", description = "Verify Google ID Token and authenticate user")
@@ -52,5 +60,15 @@ public class AuthController {
     public ApiResponse<TokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         TokenResponse response = authService.refreshToken(request);
         return ApiResponse.success(response);
+    }
+
+    @GetMapping("/verify")
+    @Operation(summary = "Verify email", description = "Verify user email using token and redirect to login")
+    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
+        authService.verifyEmail(token);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(frontendUrl + "/login?verified=true"));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 }
