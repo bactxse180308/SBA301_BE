@@ -48,6 +48,13 @@ public class UserController {
         return ApiResponse.success(userService.getById(id));
     }
 
+    @Operation(summary = "Get user dashboard data by ID", description = "Retrieve user dashboard details including orders, reviews, wishlist by user ID (Admin or User themselves)")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.toString() == #id.toString()")
+    @GetMapping("/{id}/dashboard")
+    public ApiResponse<com.sba302.electroshop.dto.response.UserDashboardResponse> getDashboard(@PathVariable Integer id) {
+        return ApiResponse.success(userService.getDashboard(id));
+    }
+
 //    @Operation(summary = "Get user by email", description = "Retrieve user details by email address (Admin only)")
 //    @GetMapping("/email/{email}")
 //    public ApiResponse<UserResponse> getByEmail(@PathVariable String email) {

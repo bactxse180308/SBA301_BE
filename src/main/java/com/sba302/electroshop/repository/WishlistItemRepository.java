@@ -14,4 +14,7 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItem, Inte
     @Modifying
     @Query("DELETE FROM WishlistItem wi WHERE wi.wishlist.wishlistId = :wishlistId")
     void deleteByWishlistId(@Param("wishlistId") Integer wishlistId);
+
+    @Query("SELECT wi FROM WishlistItem wi JOIN FETCH wi.product WHERE wi.wishlist.wishlistId = :wishlistId ORDER BY wi.createdDate DESC")
+    java.util.List<WishlistItem> findRecentItemsByWishlistId(@Param("wishlistId") Integer wishlistId, org.springframework.data.domain.Pageable pageable);
 }

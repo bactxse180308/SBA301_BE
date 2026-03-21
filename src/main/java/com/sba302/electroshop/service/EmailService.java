@@ -5,6 +5,7 @@ import com.sba302.electroshop.entity.Company;
 import com.sba302.electroshop.entity.Order;
 import com.sba302.electroshop.enums.BulkOrderStatus;
 import com.sba302.electroshop.enums.CompanyStatus;
+import com.sba302.electroshop.enums.OrderStatus;
 
 public interface EmailService {
     void sendOtpEmail(String toEmail, String otp);
@@ -12,6 +13,7 @@ public interface EmailService {
     void sendVerificationEmail(String toEmail, String fullName, String verificationUrl);
     void sendOrderConfirmationEmail(Order order);
     void sendOrderCancellationEmail(Order order, String reason);
-    void sendCompanyStatusEmail(Company company, CompanyStatus status);
+    void sendOrderStatusEmail(Order order, OrderStatus status);
+    void sendCompanyStatusEmail(Company company, CompanyStatus status, String reason);
     void sendBulkOrderStatusEmail(BulkOrder bulkOrder, BulkOrderStatus status);
 }
