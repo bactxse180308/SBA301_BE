@@ -6,9 +6,9 @@ DELETE FROM BULK_ORDER_DETAILS;
 DELETE FROM WISHLIST_ITEM;
 DELETE FROM CART_ITEM;
 DELETE FROM ORDER_DETAIL;
+DELETE FROM stock_transaction_items
 DELETE FROM stock_transactions
 DELETE FROM payment_transaction
-DELETE FROM stock_transaction_items
 DELETE FROM banners
 DELETE FROM daily_statistic
 -- Level 2 dependencies
@@ -519,16 +519,25 @@ SET IDENTITY_INSERT [dbo].[role] OFF
 GO
 SET IDENTITY_INSERT [dbo].[users] ON
 
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (11, N'88 Nguyễn Trãi, TP.HCM', N'hung.le@company.vn', N'Lê Quốc Hùng', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0903333333', CAST(N'2025-05-10T08:00:00.0000000' AS DateTime2), 500, N'ACTIVE', NULL, 9)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (12, N'99 Bạch Đằng, Hải Phòng', N'tuan.dang@company.vn', N'Đặng Minh Tuấn', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0905555555', CAST(N'2025-07-15T11:00:00.0000000' AS DateTime2), 800, N'ACTIVE', NULL, 9)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (13, N'34 Pasteur, Q.3, TP.HCM', N'kimchi.hoang@gmail.com', N'Hoàng Thị Kim Chi', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0906666666', CAST(N'2025-08-20T09:30:00.0000000' AS DateTime2), 200, N'ACTIVE', NULL, 8)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (14, N'67 Đinh Bộ Lĩnh, Bình Thạnh', N'nam.vu@gmail.com', N'Vũ Thanh Nam', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0907777777', CAST(N'2025-09-05T16:00:00.0000000' AS DateTime2), 50, N'ACTIVE', NULL, 8)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (15, N'12 Hùng Vương, Cần Thơ', N'lan.pham@gmail.com', N'Phạm Thị Lan', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0904444444', CAST(N'2025-06-01T14:00:00.0000000' AS DateTime2), 0, N'INACTIVE', NULL, 8)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (16, N'23 Lê Duẩn, Hà Nội', N'binh.nguyen@gmail.com', N'Nguyễn Văn Bình', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0901111111', CAST(N'2025-03-15T09:00:00.0000000' AS DateTime2), 150, N'ACTIVE', NULL, 8)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (17, N'55 Trần Phú, Đà Nẵng', N'huong.tran@gmail.com', N'Trần Thị Hương', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0902222222', CAST(N'2025-04-20T10:30:00.0000000' AS DateTime2), 320, N'ACTIVE', NULL, 8)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (18, N'ElectroShop Head Office', N'admin@electroshop.com', N'System Administrator', N'$2a$10$5gFxkr6YkUqZ6PwsYZUDa.Cu2x.GWe6Kj.3WTUf9OXzK/a2XBxAtq', N'0900000000', CAST(N'2026-03-09T22:45:50.6207657' AS DateTime2), 0, N'ACTIVE', NULL, 7)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (19, NULL, N'lequanghung471@gmail.com', N'Lê Quang Hùng', N'$2a$10$I/JVVvqfIkBdIhoEbL5C4eZzqgGEU3P.zNIiISFi1dtGMGQqH3Yj6', NULL, CAST(N'2026-03-16T21:49:46.3104366' AS DateTime2), 0, N'ACTIVE', 7, 9)
-INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id]) VALUES (20, N'132, Xã Tam Cường, Huyện Vĩnh Bảo, Thành phố Hải Phòng', N'lequanghung417@gmail.com', N'Lê Quang Hùng', N'$2a$10$bgQzYjGf0cbqfylyDgn41uEVxHGaDnNPkLOikr38OVOOKDywu8Osq', N'0902316625', CAST(N'2026-03-16T22:59:50.8804499' AS DateTime2), 0, N'ACTIVE', NULL, 8)
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (11, N'88 Nguyễn Trãi, TP.HCM', N'hung.le@company.vn', N'Lê Quốc Hùng', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0903333333', CAST(N'2025-05-10T08:00:00.0000000' AS DateTime2), 500, N'ACTIVE', NULL, 9, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (12, N'99 Bạch Đằng, Hải Phòng', N'tuan.dang@company.vn', N'Đặng Minh Tuấn', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0905555555', CAST(N'2025-07-15T11:00:00.0000000' AS DateTime2), 800, N'ACTIVE', NULL, 9, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (13, N'34 Pasteur, Q.3, TP.HCM', N'kimchi.hoang@gmail.com', N'Hoàng Thị Kim Chi', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0906666666', CAST(N'2025-08-20T09:30:00.0000000' AS DateTime2), 200, N'ACTIVE', NULL, 8, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (14, N'67 Đinh Bộ Lĩnh, Bình Thạnh', N'nam.vu@gmail.com', N'Vũ Thanh Nam', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0907777777', CAST(N'2025-09-05T16:00:00.0000000' AS DateTime2), 50, N'ACTIVE', NULL, 8, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (15, N'12 Hùng Vương, Cần Thơ', N'lan.pham@gmail.com', N'Phạm Thị Lan', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0904444444', CAST(N'2025-06-01T14:00:00.0000000' AS DateTime2), 0, N'INACTIVE', NULL, 8, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (16, N'23 Lê Duẩn, Hà Nội', N'binh.nguyen@gmail.com', N'Nguyễn Văn Bình', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0901111111', CAST(N'2025-03-15T09:00:00.0000000' AS DateTime2), 150, N'ACTIVE', NULL, 8, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (17, N'55 Trần Phú, Đà Nẵng', N'huong.tran@gmail.com', N'Trần Thị Hương', N'$2a$12$Sl/c9Nu.GHAm2uJf1LdNHuiTlATVtxbnAjRBbJQY3XNeefJCELNJ2', N'0902222222', CAST(N'2025-04-20T10:30:00.0000000' AS DateTime2), 320, N'ACTIVE', NULL, 8, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (18, N'ElectroShop Head Office', N'admin@electroshop.com', N'System Administrator', N'$2a$10$5gFxkr6YkUqZ6PwsYZUDa.Cu2x.GWe6Kj.3WTUf9OXzK/a2XBxAtq', N'0900000000', CAST(N'2026-03-09T22:45:50.6207657' AS DateTime2), 0, N'ACTIVE', NULL, 7, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (19, NULL, N'lequanghung471@gmail.com', N'Lê Quang Hùng', N'$2a$10$I/JVVvqfIkBdIhoEbL5C4eZzqgGEU3P.zNIiISFi1dtGMGQqH3Yj6', NULL, CAST(N'2026-03-16T21:49:46.3104366' AS DateTime2), 0, N'ACTIVE', 7, 9, 1)
+
+INSERT [dbo].[users] ([user_id], [address], [email], [full_name], [password], [phone_number], [registration_date], [reward_point], [status], [company_id], [role_id], [is_email_verified]) VALUES (20, N'132, Xã Tam Cường, Huyện Vĩnh Bảo, Thành phố Hải Phòng', N'lequanghung417@gmail.com', N'Lê Quang Hùng', N'$2a$10$bgQzYjGf0cbqfylyDgn41uEVxHGaDnNPkLOikr38OVOOKDywu8Osq', N'0902316625', CAST(N'2026-03-16T22:59:50.8804499' AS DateTime2), 0, N'ACTIVE', NULL, 8, 1)
 SET IDENTITY_INSERT [dbo].[users] OFF
 GO
 SET IDENTITY_INSERT [dbo].[voucher] ON
