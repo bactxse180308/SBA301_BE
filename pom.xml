@@ -160,6 +160,12 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Thymeleaf (Email Templates Only) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
         <!-- Google API Client for OAuth2 Token Verification -->
         <dependency>
             <groupId>com.google.api-client</groupId>

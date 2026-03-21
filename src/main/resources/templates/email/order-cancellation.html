@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{fragments/email-base :: emailLayout(~{::content})}">
+    <div th:fragment="content">
+        <!-- Status Banner -->
+        <div style="text-align: center; margin-bottom: 25px;">
+            <div style="font-size: 50px; margin-bottom: 10px;">❌</div>
+            <h2 style="color: #dc2626; margin: 0 0 5px 0;">Đơn Hàng Đã Hủy</h2>
+            <p style="color: #6b7280; font-size: 14px; margin: 0;">Chúng tôi rất tiếc thông báo đơn hàng của bạn đã bị hủy.</p>
+        </div>
+
+        <!-- Order Info Card -->
+        <div style="padding: 15px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 5px 0; color: #6b7280; width: 140px;">Mã đơn hàng:</td>
+                    <td style="padding: 5px 0; font-weight: bold; color: #1f2937;">
+                        #<span th:text="${order.orderId}"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #6b7280;">Trạng thái:</td>
+                    <td style="padding: 5px 0;">
+                        <span style="background-color: #dc2626; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                            ĐÃ HỦY
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Cancellation Reason -->
+        <div style="padding: 15px; background-color: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px;">
+            <p style="margin: 0 0 5px 0; font-weight: bold; color: #1f2937;">📝 Lý do hủy:</p>
+            <p style="margin: 0; color: #374151; line-height: 1.5;" th:text="${reason != null ? reason : 'Không có thông tin'}"></p>
+        </div>
+
+        <!-- Product Table -->
+        <h3 th:if="${order.orderDetails != null and !order.orderDetails.isEmpty()}"
+            style="color: #1f2937; margin: 20px 0 10px 0; font-size: 16px; border-bottom: 2px solid #dc2626; padding-bottom: 8px;">
+            📦 Sản phẩm trong đơn
+        </h3>
+        <table th:if="${order.orderDetails != null and !order.orderDetails.isEmpty()}"
+               style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+            <thead>
+                <tr style="background-color: #dc2626; color: #ffffff;">
+                    <th style="padding: 10px; text-align: left; font-size: 13px;">Sản phẩm</th>
+                    <th style="padding: 10px; text-align: center; font-size: 13px; width: 60px;">SL</th>
+                    <th style="padding: 10px; text-align: right; font-size: 13px; width: 120px;">Đơn giá</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="detail, iterStat : ${order.orderDetails}"
+                    th:style="${iterStat.odd ? 'background-color: #f9fafb;' : ''}">
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px;"
+                        th:text="${detail.product.productName}"></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 13px;"
+                        th:text="${detail.quantity}"></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-size: 13px;"
+                        th:text="${#numbers.formatCurrency(detail.unitPrice)}"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Total -->
+        <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 5px 0; font-weight: bold; color: #1f2937;">Tổng giá trị đơn hàng:</td>
+                    <td style="padding: 5px 0; text-align: right; font-weight: bold; color: #dc2626; font-size: 16px;"
+                        th:text="${formattedTotal}"></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Support Info -->
+        <div style="padding: 15px; background-color: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+            <p style="margin: 0 0 5px 0; font-weight: bold; color: #1f2937;">💬 Cần hỗ trợ?</p>
+            <p style="margin: 0; color: #374151; font-size: 14px; line-height: 1.5;">
+                Nếu bạn có thắc mắc hoặc cần hoàn tiền, vui lòng liên hệ đội ngũ hỗ trợ qua email hoặc hotline.
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

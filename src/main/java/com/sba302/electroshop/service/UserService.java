@@ -25,4 +25,6 @@ public interface UserService {
     void addRewardPoints(Integer userId, Integer points);
 
     void delete(Integer id);
+
+    com.sba302.electroshop.dto.response.UserDashboardResponse getDashboard(Integer id);
 }

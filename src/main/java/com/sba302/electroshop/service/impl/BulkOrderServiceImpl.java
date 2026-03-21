@@ -165,9 +165,10 @@ class BulkOrderServiceImpl implements BulkOrderService {
         savedOrder.setSubtotalAfterTier(subtotal);
         bulkOrderRepository.save(savedOrder);
 
-        // BƯỚC 7: Reload từ DB để lấy đầy đủ details rồi return
+        // BƯỚC 7: Reload từ DB để lấy đầy đủ details, gửi email rồi return
         BulkOrder reloaded = bulkOrderRepository.findById(savedOrder.getBulkOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found"));
+        
         return buildFullResponse(reloaded);
     }
 
@@ -214,10 +215,29 @@ class BulkOrderServiceImpl implements BulkOrderService {
         BulkOrder updated = bulkOrderRepository.save(bulkOrder);
 
         // Send email notification for important status changes
-        if (status == BulkOrderStatus.AWAITING_PAYMENT || 
+        if (status == BulkOrderStatus.CONFIRMED || 
+            status == BulkOrderStatus.AWAITING_PAYMENT || 
             status == BulkOrderStatus.COMPLETED || 
             status == BulkOrderStatus.CANCELLED || 
             status == BulkOrderStatus.REJECTED) {
+            
+            // Force initialize lazy proxies before passing to async EmailService
+            if (updated.getUser() != null) {
+                updated.getUser().getEmail();
+            }
+            if (updated.getDetails() != null) {
+                updated.getDetails().size();
+                for (com.sba302.electroshop.entity.BulkOrderDetail d : updated.getDetails()) {
+                    if (d.getProduct() != null) {
+                        d.getProduct().getProductName();
+                        d.getProduct().getMainImage();
+                    }
+                    if (d.getCustomizations() != null) {
+                        d.getCustomizations().size();
+                    }
+                }
+            }
+            
             emailService.sendBulkOrderStatusEmail(updated, status);
         }
 

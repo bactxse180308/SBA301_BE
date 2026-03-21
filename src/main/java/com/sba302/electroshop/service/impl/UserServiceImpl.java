@@ -31,6 +31,10 @@ class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final com.sba302.electroshop.repository.OrderRepository orderRepository;
+    private final com.sba302.electroshop.repository.ReviewRepository reviewRepository;
+    private final com.sba302.electroshop.repository.WishlistRepository wishlistRepository;
+    private final com.sba302.electroshop.repository.WishlistItemRepository wishlistItemRepository;
 
     @Override
     public UserResponse getById(Integer id) {
@@ -149,5 +153,63 @@ class UserServiceImpl implements UserService {
             throw new ResourceNotFoundException("User not found: " + id);
         }
         userRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.sba302.electroshop.dto.response.UserDashboardResponse getDashboard(Integer id) {
+        log.info("Getting dashboard data for user id: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+
+        UserResponse userInfo = userMapper.toResponse(user);
+
+        Long totalOrders = orderRepository.countOrdersByUserId(id);
+        java.math.BigDecimal totalSpent = orderRepository.sumSpentByUserId(id);
+        if (totalSpent == null) totalSpent = java.math.BigDecimal.ZERO;
+
+        org.springframework.data.domain.Pageable recentItemsPage = org.springframework.data.domain.PageRequest.of(0, 3);
+        
+        java.util.List<com.sba302.electroshop.dto.response.RecentOrderResponse> recentOrders = orderRepository.findRecentOrdersByUserId(id, recentItemsPage);
+        
+        java.util.List<com.sba302.electroshop.entity.Review> recentReviewEntities = reviewRepository.findRecentReviewsByUserId(id, recentItemsPage);
+        java.util.List<com.sba302.electroshop.dto.response.ReviewResponse> recentReviews = recentReviewEntities.stream()
+            .map(r -> com.sba302.electroshop.dto.response.ReviewResponse.builder()
+                .reviewId(r.getReviewId())
+                .userId(user.getUserId())
+                .userFullName(user.getFullName())
+                .productId(r.getProduct().getProductId())
+                .productName(r.getProduct().getProductName())
+                .rating(r.getRating())
+                .comment(r.getComment())
+                .reviewDate(r.getReviewDate())
+                .replyComment(r.getReplyComment())
+                .replyDate(r.getReplyDate())
+                .repliedByUserId(r.getRepliedBy() != null ? r.getRepliedBy().getUserId() : null)
+                .repliedByFullName(r.getRepliedBy() != null ? r.getRepliedBy().getFullName() : null)
+                .build())
+            .toList();
+
+        java.util.List<com.sba302.electroshop.dto.response.WishlistResponse.WishlistItemResponse> wishlistItems = new java.util.ArrayList<>();
+        wishlistRepository.findFirstByUser_UserId(id).ifPresent(w -> {
+            java.util.List<com.sba302.electroshop.entity.WishlistItem> items = wishlistItemRepository.findRecentItemsByWishlistId(w.getWishlistId(), recentItemsPage);
+            items.forEach(item -> wishlistItems.add(
+                com.sba302.electroshop.dto.response.WishlistResponse.WishlistItemResponse.builder()
+                    .productId(item.getProduct().getProductId())
+                    .productName(item.getProduct().getProductName())
+                    .productImageUrl(item.getProduct().getMainImage())
+                    .createdDate(item.getCreatedDate())
+                    .build()
+            ));
+        });
+
+        return com.sba302.electroshop.dto.response.UserDashboardResponse.builder()
+                .userInfo(userInfo)
+                .totalOrders(totalOrders)
+                .totalSpent(totalSpent)
+                .recentOrders(recentOrders)
+                .recentReviews(recentReviews)
+                .wishlist(wishlistItems)
+                .build();
     }
 }

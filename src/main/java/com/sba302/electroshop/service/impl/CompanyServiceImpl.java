@@ -108,7 +108,10 @@ class CompanyServiceImpl implements CompanyService {
         log.info("User (COMPANY) with email: {} linked to company id: {} and role updated",
                 savedUser.getEmail(), savedCompany.getCompanyId());
  
-        // 5. Trả về response đầy đủ
+        // 5. Gửi email xác nhận đăng ký
+        emailService.sendCompanyStatusEmail(savedCompany, CompanyStatus.PENDING, null);
+
+        // 6. Trả về response đầy đủ
         return companyMapper.toCreateCompanyResponse(savedCompany, savedUser);
     }
 
@@ -145,7 +148,7 @@ class CompanyServiceImpl implements CompanyService {
         Company updatedCompany = companyRepository.save(company);
         
         if (status != CompanyStatus.PENDING) {
-            emailService.sendCompanyStatusEmail(updatedCompany, status);
+            emailService.sendCompanyStatusEmail(updatedCompany, status, null);
         }
 
         log.info("Company status updated to {} for id: {}", status, id);

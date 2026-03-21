@@ -44,6 +44,16 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpeci
            "ORDER BY o.orderDate DESC")
     java.util.List<com.sba302.electroshop.dto.response.RecentOrderResponse> findRecentOrders(org.springframework.data.domain.Pageable pageable);
 
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId")
+    Long countOrdersByUserId(@Param("userId") Integer userId);
 
+    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.user.userId = :userId AND (o.orderStatus = 'DELIVERED' OR o.orderStatus = 'COMPLETED')")
+    java.math.BigDecimal sumSpentByUserId(@Param("userId") Integer userId);
+
+    @Query("SELECT new com.sba302.electroshop.dto.response.RecentOrderResponse(o.orderId, CAST(o.orderId AS string), o.user.fullName, o.totalAmount, CAST(o.orderStatus AS string), o.orderDate) " +
+           "FROM Order o " +
+           "WHERE o.user.userId = :userId " +
+           "ORDER BY o.orderDate DESC")
+    java.util.List<com.sba302.electroshop.dto.response.RecentOrderResponse> findRecentOrdersByUserId(@Param("userId") Integer userId, org.springframework.data.domain.Pageable pageable);
 
 }
