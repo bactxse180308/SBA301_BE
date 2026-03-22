@@ -13,6 +13,7 @@ import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.BulkOrderMapper;
 import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.BulkOrderService;
+import com.sba302.electroshop.service.CustomerWarrantyService;
 import com.sba302.electroshop.service.EmailService;
 import com.sba302.electroshop.service.VoucherService;
 import com.sba302.electroshop.specification.BulkOrderSpecification;
@@ -43,6 +44,7 @@ class BulkOrderServiceImpl implements BulkOrderService {
     private final BulkOrderPricingService pricingService;
     private final VoucherService voucherService;
     private final EmailService emailService;
+    private final CustomerWarrantyService customerWarrantyService;
 
     @Override
     @Transactional(readOnly = true)
@@ -213,6 +215,18 @@ class BulkOrderServiceImpl implements BulkOrderService {
         }
 
         BulkOrder updated = bulkOrderRepository.save(bulkOrder);
+
+        // Tự động tạo CustomerWarranty khi bulk order hoàn thành
+        if (status == BulkOrderStatus.COMPLETED) {
+            // Trigger Hibernate lazy load details (phải làm trong transaction)
+            if (updated.getDetails() != null) {
+                updated.getDetails().size(); // initialize collection
+                for (var d : updated.getDetails()) {
+                    d.getProduct().getProductId(); // initialize product proxy
+                }
+            }
+            customerWarrantyService.createFromBulkOrder(updated);
+        }
 
         // Send email notification for important status changes
         if (status == BulkOrderStatus.CONFIRMED || 
