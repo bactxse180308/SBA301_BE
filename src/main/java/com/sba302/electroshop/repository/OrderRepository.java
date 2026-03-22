@@ -30,6 +30,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpeci
     @Query("SELECT COUNT(o) FROM Order o WHERE o.orderDate >= :startOfDay AND o.orderDate < :endOfDay")
     Integer countOrdersByDateRange(@Param("startOfDay") java.time.LocalDateTime startOfDay, @Param("endOfDay") java.time.LocalDateTime endOfDay);
 
+    @Query("SELECT o FROM Order o WHERE o.orderStatus = 'CANCELLED' AND o.orderDate >= :start AND o.orderDate < :end")
+    List<Order> findCancelledOrders(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
     @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderDate >= :startOfDay AND o.orderDate < :endOfDay AND o.orderStatus = 'DELIVERED'")
     java.math.BigDecimal sumRevenueByDateRange(@Param("startOfDay") java.time.LocalDateTime startOfDay, @Param("endOfDay") java.time.LocalDateTime endOfDay);
 

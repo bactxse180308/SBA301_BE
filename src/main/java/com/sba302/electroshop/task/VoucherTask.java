@@ -37,6 +37,11 @@ public class VoucherTask {
             log.info("Deactivated {} vouchers that reached usage limit", reachedLimit);
         }
 
+        int notStarted = voucherRepository.deactivateNotStartedVouchers(now);
+        if (notStarted > 0) {
+            log.info("Deactivated {} vouchers that haven't started yet", notStarted);
+        }
+
         int activated = voucherRepository.activateValidVouchers(now);
         if (activated > 0) {
             log.info("Activated {} valid vouchers", activated);
