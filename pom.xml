@@ -160,6 +160,12 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Thymeleaf (Email Templates Only) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
         <!-- Google API Client for OAuth2 Token Verification -->
         <dependency>
             <groupId>com.google.api-client</groupId>
@@ -178,7 +184,14 @@
             <artifactId>jsoup</artifactId>
             <version>1.18.3</version>
         </dependency>
+        <!-- Apache POI for Excel Export -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
+        </dependency>
     </dependencies>
+
 
     <build>
         <plugins>

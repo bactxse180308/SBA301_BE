@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{fragments/email-base :: emailLayout(~{::content})}">
+    <div th:fragment="content">
+        <!-- Status Banner -->
+        <div style="text-align: center; margin-bottom: 25px;">
+            <div style="font-size: 50px; margin-bottom: 10px;" th:text="${icon}"></div>
+            <h2 th:style="'color: ' + ${color} + '; margin: 0 0 5px 0;'" th:text="${title}"></h2>
+            <p style="color: #6b7280; font-size: 14px; margin: 0;" th:text="${subtitle}"></p>
+        </div>
+
+        <!-- Order Info Card -->
+        <div style="padding: 15px; border-radius: 8px; margin-bottom: 20px;"
+             th:style="'padding: 15px; border-radius: 8px; margin-bottom: 20px; background-color: #f9fafb; border-left: 4px solid ' + ${color} + ';'">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 5px 0; color: #6b7280; width: 140px;">Mã đơn hàng:</td>
+                    <td style="padding: 5px 0; font-weight: bold; color: #1f2937;">
+                        #<span th:text="${order.orderId}"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #6b7280;">Ngày đặt:</td>
+                    <td style="padding: 5px 0; color: #1f2937;" th:text="${orderDate}"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #6b7280;">Trạng thái:</td>
+                    <td style="padding: 5px 0;">
+                        <span th:style="'background-color: ' + ${color} + '; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;'"
+                              th:text="${statusLabel}"></span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Product Table -->
+        <h3 th:if="${order.orderDetails != null and !order.orderDetails.isEmpty()}"
+            style="color: #1f2937; margin: 20px 0 10px 0; font-size: 16px; border-bottom: 2px solid #dc2626; padding-bottom: 8px;">
+            📦 Chi tiết sản phẩm
+        </h3>
+        <table th:if="${order.orderDetails != null and !order.orderDetails.isEmpty()}"
+               style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+            <thead>
+                <tr style="background-color: #dc2626; color: #ffffff;">
+                    <th style="padding: 10px; text-align: center; font-size: 13px; width: 60px;">Hình ảnh</th>
+                    <th style="padding: 10px; text-align: left; font-size: 13px;">Sản phẩm</th>
+                    <th style="padding: 10px; text-align: center; font-size: 13px; width: 60px;">SL</th>
+                    <th style="padding: 10px; text-align: right; font-size: 13px; width: 120px;">Đơn giá</th>
+                    <th style="padding: 10px; text-align: right; font-size: 13px; width: 120px;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="detail, iterStat : ${order.orderDetails}"
+                    th:style="${iterStat.odd ? 'background-color: #f9fafb;' : ''}">
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+                        <img th:if="${detail.product.mainImage != null}" th:src="${detail.product.mainImage}" alt="Product Image" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px;"
+                        th:text="${detail.product.productName}"></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 13px;"
+                        th:text="${detail.quantity}"></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-size: 13px;"
+                        th:text="${#numbers.formatCurrency(detail.unitPrice)}"></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-size: 13px; font-weight: bold;"
+                        th:text="${#numbers.formatCurrency(detail.subtotal != null ? detail.subtotal : detail.unitPrice * detail.quantity)}"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Total -->
+        <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr th:if="${order.discountAmount != null and order.discountAmount > 0}">
+                    <td style="padding: 5px 0; color: #6b7280;">Tạm tính:</td>
+                    <td style="padding: 5px 0; text-align: right;" th:text="${#numbers.formatCurrency(order.totalAmount)}"></td>
+                </tr>
+                <tr th:if="${order.discountAmount != null and order.discountAmount > 0}">
+                    <td style="padding: 5px 0; color: #16a34a;">
+                        Giảm giá
+                        <span th:if="${order.userVoucher != null and order.userVoucher.voucher != null}" th:text="'(Voucher: ' + ${order.userVoucher.voucher.voucherCode} + ')'" style="font-size: 12px; color: #6b7280; font-weight: normal; margin-left: 5px;"></span>:
+                    </td>
+                    <td style="padding: 5px 0; text-align: right; color: #16a34a;">
+                        -<span th:text="${#numbers.formatCurrency(order.discountAmount)}"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #1f2937; border-top: 2px solid #dc2626;">
+                        💰 Tổng thanh toán:
+                    </td>
+                    <td style="padding: 8px 0; text-align: right; font-size: 20px; font-weight: bold; color: #dc2626; border-top: 2px solid #dc2626;"
+                        th:text="${formattedTotal}"></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Shipping Address -->
+        <div th:if="${order.shippingAddress != null}" style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #dc2626; background-color: #fef2f2; border-radius: 4px;">
+            <p style="margin: 0 0 5px 0; font-weight: bold; color: #1f2937;">🚚 Địa chỉ giao hàng:</p>
+            <p style="margin: 0; color: #374151; line-height: 1.5;" th:text="${order.shippingAddress}"></p>
+        </div>
+
+        <!-- SHIPPED Note -->
+        <div th:if="${statusType == 'SHIPPED'}" style="padding: 20px; background-color: #eff6ff; border-radius: 8px; border: 1px solid #93c5fd;">
+            <h3 style="color: #2563eb; margin: 0 0 10px 0;">🚛 Đang giao hàng</h3>
+            <p style="color: #374151; line-height: 1.6; margin: 0;">
+                Đơn hàng đang trên đường đến địa chỉ của bạn. Vui lòng giữ liên lạc điện thoại để nhận hàng.
+            </p>
+        </div>
+
+        <!-- DELIVERED Note -->
+        <div th:if="${statusType == 'DELIVERED'}" style="padding: 20px; background-color: #f0fdf4; border-radius: 8px; border: 1px solid #86efac;">
+            <h3 style="color: #16a34a; margin: 0 0 10px 0;">🎉 Giao hàng thành công!</h3>
+            <p style="color: #374151; line-height: 1.6; margin: 0;">
+                Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm tại Phụ Kiện Điện Tử! Chúc bạn hài lòng với sản phẩm.
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -22,6 +22,10 @@ public interface VoucherRepository extends JpaRepository<Voucher, Integer> {
     int deactivateVouchersReachedLimit();
 
     @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE Voucher v SET v.isValid = false WHERE v.isValid = true AND v.validFrom > :now")
+    int deactivateNotStartedVouchers(@org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now);
+
+    @org.springframework.data.jpa.repository.Modifying
     @org.springframework.data.jpa.repository.Query("UPDATE Voucher v SET v.isValid = true WHERE v.isValid = false AND v.isActive = true AND (v.validFrom IS NULL OR v.validFrom <= :now) AND (v.validTo IS NULL OR v.validTo >= :now) AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
     int activateValidVouchers(@org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now);
 }

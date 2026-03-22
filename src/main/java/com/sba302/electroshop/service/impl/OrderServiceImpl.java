@@ -143,7 +143,15 @@ class OrderServiceImpl implements OrderService {
             // Fetch details for email
             List<OrderDetail> details = orderDetailRepository.findByOrderId(orderId);
             savedOrder.setOrderDetails(details);
+            initializeLazyFieldsForEmail(savedOrder);
             emailService.sendOrderConfirmationEmail(savedOrder);
+        }
+
+        if (newStatus == OrderStatus.SHIPPED || newStatus == OrderStatus.DELIVERED) {
+            List<OrderDetail> details = orderDetailRepository.findByOrderId(orderId);
+            savedOrder.setOrderDetails(details);
+            initializeLazyFieldsForEmail(savedOrder);
+            emailService.sendOrderStatusEmail(savedOrder, newStatus);
         }
 
         return orderMapper.toResponse(savedOrder);
@@ -210,6 +218,7 @@ class OrderServiceImpl implements OrderService {
         order.setCancelReason(reason);
         orderRepository.save(order);
         
+        initializeLazyFieldsForEmail(order);
         emailService.sendOrderCancellationEmail(order, reason);
         
         log.info("Order cancelled and resources restored: id={}", orderId);
@@ -218,6 +227,24 @@ class OrderServiceImpl implements OrderService {
     // ================================================================
     // PRIVATE HELPER METHODS
     // ================================================================
+
+    private void initializeLazyFieldsForEmail(Order order) {
+        if (order.getUser() != null) {
+            order.getUser().getEmail();
+        }
+        if (order.getOrderDetails() != null) {
+            order.getOrderDetails().size();
+            for (OrderDetail detail : order.getOrderDetails()) {
+                if (detail.getProduct() != null) {
+                    detail.getProduct().getProductName();
+                    detail.getProduct().getMainImage();
+                }
+            }
+        }
+        if (order.getUserVoucher() != null && order.getUserVoucher().getVoucher() != null) {
+            order.getUserVoucher().getVoucher().getVoucherCode();
+        }
+    }
 
     /**
      * Validate user exists and is ACTIVE.

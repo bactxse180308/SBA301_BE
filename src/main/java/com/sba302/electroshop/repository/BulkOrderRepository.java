@@ -19,6 +19,12 @@ public interface BulkOrderRepository extends JpaRepository<BulkOrder, Integer>, 
 
     long countByCreatedAtAfter(LocalDateTime dateTime);
 
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    long countByStatusAndCreatedAtBetween(BulkOrderStatus status, LocalDateTime start, LocalDateTime end);
+
+    List<BulkOrder> findByStatusAndCreatedAtBetween(BulkOrderStatus status, LocalDateTime start, LocalDateTime end);
+
     @Query("SELECT SUM(b.finalPrice) FROM BulkOrder b WHERE b.status IN :paidStatuses AND b.createdAt >= :start AND b.createdAt <= :end")
     BigDecimal sumFinalPriceByStatusInAndCreatedAtBetween(
             @Param("paidStatuses") List<BulkOrderStatus> paidStatuses,

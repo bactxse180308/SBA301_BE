@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  Reusable email base fragment.
+  Usage: th:replace="~{fragments/email-base :: emailLayout(~{::content})}"
+-->
+<body>
+<div th:fragment="emailLayout(content)"
+     style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f4f4f7;">
+
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 25px 20px; text-align: center; border-radius: 10px 10px 0 0;">
+        <table style="margin: 0 auto; border-collapse: collapse;">
+            <tr>
+                <td style="vertical-align: middle; padding-right: 12px;">
+                    <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.2); border-radius: 8px; display: inline-block; text-align: center; line-height: 42px;">
+                        <span style="color: #ffffff; font-weight: bold; font-size: 18px;">PK</span>
+                    </div>
+                </td>
+                <td style="vertical-align: middle; text-align: left;">
+                    <div style="color: #ffffff; font-size: 18px; font-weight: 700; line-height: 1.2;">PHỤ KIỆN</div>
+                    <div style="color: rgba(255,255,255,0.75); font-size: 11px; letter-spacing: 1px;">ĐIỆN TỬ</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Body -->
+    <div style="background-color: #ffffff; padding: 30px 25px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;">
+        <div th:replace="${content}">Content goes here</div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #1f2937; padding: 20px; text-align: center; border-radius: 0 0 10px 10px;">
+        <p style="color: #9ca3af; font-size: 12px; margin: 0 0 5px 0;">
+            Email này được gửi tự động từ hệ thống Phụ Kiện Điện Tử.
+        </p>
+        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+            &copy; 2024 Phụ Kiện Điện Tử. All rights reserved.
+        </p>
+    </div>
+</div>
+</body>
+</html>
