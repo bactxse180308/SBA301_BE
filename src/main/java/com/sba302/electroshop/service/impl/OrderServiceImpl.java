@@ -12,6 +12,7 @@ import com.sba302.electroshop.exception.ApiException;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.mapper.OrderMapper;
 import com.sba302.electroshop.repository.*;
+import com.sba302.electroshop.service.CustomerWarrantyService;
 import com.sba302.electroshop.service.EmailService;
 import com.sba302.electroshop.service.OrderService;
 import com.sba302.electroshop.service.VoucherService;
@@ -44,6 +45,7 @@ class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final VoucherService voucherService;
     private final EmailService emailService;
+    private final CustomerWarrantyService customerWarrantyService;
 
     // ================================================================
     // PUBLIC METHODS
@@ -152,6 +154,13 @@ class OrderServiceImpl implements OrderService {
             savedOrder.setOrderDetails(details);
             initializeLazyFieldsForEmail(savedOrder);
             emailService.sendOrderStatusEmail(savedOrder, newStatus);
+        }
+
+        // Tự động tạo CustomerWarranty khi đơn hàng giao thành công
+        if (newStatus == OrderStatus.DELIVERED) {
+            List<OrderDetail> details = orderDetailRepository.findByOrderId(orderId);
+            savedOrder.setOrderDetails(details);
+            customerWarrantyService.createFromOrder(savedOrder);
         }
 
         return orderMapper.toResponse(savedOrder);
