@@ -24,6 +24,7 @@ public class CartResponse {
     public static class CartItemResponse {
         private Integer productId;
         private String productName;
+        private String mainImage;
         private BigDecimal price;
         private Integer quantity;
         private BigDecimal subtotal;

@@ -54,6 +54,7 @@ class ShoppingCartServiceImpl implements ShoppingCartService {
             return CartResponse.CartItemResponse.builder()
                     .productId(item.getProduct().getProductId())
                     .productName(item.getProduct().getProductName())
+                    .mainImage(item.getProduct().getMainImage())
                     .price(price)
                     .quantity(item.getQuantity())
                     .subtotal(subtotal)
