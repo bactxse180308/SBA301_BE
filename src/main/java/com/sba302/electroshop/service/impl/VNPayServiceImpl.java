@@ -75,7 +75,7 @@ public class VNPayServiceImpl implements VNPayService {
         String expireDate = VNPayUtil.formatDate(LocalDateTime.now().plusMinutes(15));
 
         String orderInfo = (type == PaymentType.BULK)
-                ? "Thanh toan don hang si " + orderId
+                ? "BULK Thanh toan don hang si " + orderId
                 : "Thanh toan don hang " + orderId;
 
         Map<String, String> params = new HashMap<>();
