@@ -36,14 +36,14 @@ public class SupplierController {
     }
 
     @PostMapping
-
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<SupplierResponse> create(@Valid @RequestBody CreateSupplierRequest request) {
         return ApiResponse.success(supplierService.create(request));
     }
 
     @PutMapping("/{id}")
-
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<SupplierResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody CreateSupplierRequest request) {
@@ -51,7 +51,7 @@ public class SupplierController {
     }
 
     @DeleteMapping("/{id}")
-
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         supplierService.delete(id);

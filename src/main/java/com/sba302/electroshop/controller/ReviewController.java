@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -62,6 +63,7 @@ public class ReviewController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated() and authentication.principal.toString() == #userId.toString()")
     public ApiResponse<ReviewResponse> create(
             @RequestParam Integer userId,
             @Valid @RequestBody CreateReviewRequest request) {
@@ -69,6 +71,7 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<ReviewResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateReviewRequest request) {
@@ -77,12 +80,14 @@ public class ReviewController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         reviewService.delete(id);
         return ApiResponse.success(null);
     }
 
     @PostMapping("/{id}/reply")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<ReviewResponse> adminReply(
             @PathVariable Integer id,
             @RequestParam Integer adminUserId,

@@ -23,6 +23,7 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
 
     @GetMapping("/inventory")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Page<StockItemResponse>> getInventory(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Integer branchId,

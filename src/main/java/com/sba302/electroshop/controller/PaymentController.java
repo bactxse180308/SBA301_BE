@@ -5,12 +5,12 @@ import com.sba302.electroshop.dto.response.PaymentTransactionResponse;
 import com.sba302.electroshop.dto.response.VNPayPaymentUrlResponse;
 import com.sba302.electroshop.enums.PaymentType;
 import com.sba302.electroshop.service.VNPayService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +26,7 @@ public class PaymentController {
     private final VNPayService vnPayService;
 
     @PostMapping("/vnpay/create")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<VNPayPaymentUrlResponse> createPayment(
             @RequestParam Integer orderId,
             @RequestParam(defaultValue = "NORMAL") PaymentType type,
