@@ -15,6 +15,8 @@ import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.CustomerWarrantyService;
 import com.sba302.electroshop.service.EmailService;
 import com.sba302.electroshop.service.OrderService;
+import com.sba302.electroshop.service.StockTransactionService;
+import com.sba302.electroshop.service.StoreBranchService;
 import com.sba302.electroshop.service.VoucherService;
 import com.sba302.electroshop.dto.response.VoucherApplicationResult;
 import com.sba302.electroshop.specification.OrderSpecification;
@@ -41,11 +43,12 @@ class OrderServiceImpl implements OrderService {
     private final OrderDetailRepository orderDetailRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final BranchProductStockRepository branchProductStockRepository;
     private final OrderMapper orderMapper;
     private final VoucherService voucherService;
     private final EmailService emailService;
     private final CustomerWarrantyService customerWarrantyService;
+    private final StoreBranchService storeBranchService;
+    private final StockTransactionService stockTransactionService;
 
     // ================================================================
     // PUBLIC METHODS
@@ -100,11 +103,15 @@ class OrderServiceImpl implements OrderService {
         // 5. Build details + deduct stock (batch) → trả về totalAmount gốc
         BigDecimal totalAmount = buildOrderDetailsAndDeductStock(order, request.getItems(), validationContext);
 
+        // 5b. Fetch saved details để ghi RESERVED transaction
+        List<OrderDetail> savedDetails = orderDetailRepository.findByOrderId(order.getOrderId());
+        stockTransactionService.recordReserved(order.getOrderId(), savedDetails);
+
         // 6. Apply voucher nếu có
         if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
             VoucherApplicationResult voucherResult = voucherService.applyVoucher(
                     request.getVoucherCode(), userId, totalAmount);
-            
+
             BigDecimal discount = voucherResult.getDiscountAmount();
             BigDecimal finalAmount = totalAmount.subtract(discount).max(BigDecimal.ZERO);
 
@@ -181,37 +188,9 @@ class OrderServiceImpl implements OrderService {
             throw new ApiException("Order cannot be cancelled in status: " + order.getOrderStatus());
         }
 
-        // 2. Restore stocks
+        // 2. Record cancellation (smart: RELEASED or IMPORT per branch) + restore stock
         List<OrderDetail> details = orderDetailRepository.findByOrderId(orderId);
-        List<BranchProductStock> updatedBranchStocks = new ArrayList<>();
-        List<Product> updatedProducts = new ArrayList<>();
-
-        for (OrderDetail detail : details) {
-            Product product = detail.getProduct();
-            BranchProductStock branchStock = branchProductStockRepository
-                    .findByBranch_BranchIdAndProduct_ProductId(
-                            detail.getBranch().getBranchId(),
-                            product.getProductId())
-                    .orElseThrow(() -> new ApiException("Branch stock record not found for restoration"));
-
-            // Increment stock
-            branchStock.setQuantity(branchStock.getQuantity() + detail.getQuantity());
-            branchStock.setLastUpdated(LocalDateTime.now());
-            updatedBranchStocks.add(branchStock);
-
-            // Decrement soldCount
-            if (product.getSoldCount() != null) {
-                product.setSoldCount(Math.max(0, product.getSoldCount() - detail.getQuantity()));
-                updatedProducts.add(product);
-            }
-        }
-
-        if (!updatedBranchStocks.isEmpty()) {
-            branchProductStockRepository.saveAll(updatedBranchStocks);
-        }
-        if (!updatedProducts.isEmpty()) {
-            productRepository.saveAll(updatedProducts);
-        }
+        stockTransactionService.recordCancellation(orderId, details);
 
         // 3. Refund voucher if any
         if (order.getUserVoucher() != null) {
@@ -299,30 +278,18 @@ class OrderServiceImpl implements OrderService {
                 .stream()
                 .collect(Collectors.toMap(Product::getProductId, Function.identity()));
 
-        // 1 query for ALL available stocks for these products
-        List<BranchProductStock> allStocks = branchProductStockRepository.findAllByProductIds(productIds);
-
-        // Group stocks by productId
-        Map<Integer, List<BranchProductStock>> stocksByProduct = allStocks.stream()
-                .collect(Collectors.groupingBy(bps -> bps.getProduct().getProductId()));
-
-        Map<Integer, BranchProductStock> selectedStockMap = new HashMap<>();
-
         for (var item : items) {
             Product product = productMap.get(item.getProductId());
             validateProductBasics(product, item.getProductId());
-
-            // Find best branch for this product
-            List<BranchProductStock> availableStocks = stocksByProduct.getOrDefault(item.getProductId(), Collections.emptyList());
-
-            BranchProductStock selectedStock = availableStocks.stream()
-                    .filter(stock -> stock.getQuantity() >= item.getQuantity())
-                    .max(Comparator.comparingInt(BranchProductStock::getQuantity)) // Pick branch with most stock
-                    .orElseThrow(() -> new ApiException("Insufficient stock for product: " + product.getProductName()
-                            + ". No branch has " + item.getQuantity() + " units available."));
-
-            selectedStockMap.put(item.getProductId(), selectedStock);
         }
+
+        // 1 query for ALL available stocks for these products
+        List<StoreBranchService.AllocationRequest> allocationRequests = items.stream()
+                .map(item -> new StoreBranchService.AllocationRequest(item.getProductId(), item.getQuantity()))
+                .toList();
+
+        StoreBranchService.AllocationResult allocationResult = storeBranchService.calculateBestAllocation(allocationRequests);
+        Map<Integer, BranchProductStock> selectedStockMap = allocationResult.selectedStockMap();
 
         return new OrderValidationContext(productMap, selectedStockMap);
     }
@@ -341,7 +308,7 @@ class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * Build OrderDetail list, deduct stock (main + branch), and saveAll in batch.
+     * Build OrderDetail list, deduct stock via StoreBranchService, and saveAll in batch.
      * Returns the original total amount before any discount.
      */
     private BigDecimal buildOrderDetailsAndDeductStock(Order order,
@@ -349,12 +316,17 @@ class OrderServiceImpl implements OrderService {
                                                        OrderValidationContext validationContext) {
         BigDecimal total = BigDecimal.ZERO;
         List<OrderDetail> details = new ArrayList<>();
-        List<BranchProductStock> updatedBranchStocks = new ArrayList<>();
-        List<Product> updatedProducts = new ArrayList<>();
 
         for (var item : items) {
             Product product = validationContext.productMap().get(item.getProductId());
-            BranchProductStock branchStock = validationContext.selectedStockMap().get(item.getProductId());
+            BranchProductStock selectedStock = validationContext.selectedStockMap().get(item.getProductId());
+
+            // Deduct exact stock determined by greedy allocator
+            BranchProductStock branchStock = storeBranchService.deductExactStock(
+                    selectedStock.getBranch().getBranchId(),
+                    item.getProductId(),
+                    item.getQuantity()
+            );
 
             BigDecimal subtotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(item.getQuantity()));
@@ -368,28 +340,11 @@ class OrderServiceImpl implements OrderService {
                     .subtotal(subtotal)
                     .build();
 
-            // 1. Deduct branch stock
-            branchStock.setQuantity(branchStock.getQuantity() - item.getQuantity());
-            branchStock.setLastUpdated(LocalDateTime.now());
-            updatedBranchStocks.add(branchStock);
-
-            // 2. Increment product soldCount
-            product.setSoldCount(product.getSoldCount() + item.getQuantity());
-            updatedProducts.add(product);
-
             details.add(detail);
             total = total.add(subtotal);
         }
 
-        // Batch insert / update
         orderDetailRepository.saveAll(details);
-        if (!updatedBranchStocks.isEmpty()) {
-            branchProductStockRepository.saveAll(updatedBranchStocks);
-        }
-        if (!updatedProducts.isEmpty()) {
-            productRepository.saveAll(updatedProducts);
-        }
-
         return total;
     }
 

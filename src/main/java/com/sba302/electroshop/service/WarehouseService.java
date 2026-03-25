@@ -15,5 +15,9 @@ public interface WarehouseService {
 
     void exportStock(StockExportRequest request);
 
+    void confirmExportForOrder(Integer orderId, com.sba302.electroshop.dto.request.ConfirmExportRequest request);
+
+    void confirmExportForBulkOrder(Integer bulkOrderId, com.sba302.electroshop.dto.request.ConfirmExportRequest request);
+
     StockCheckResult checkStock(Integer branchId, Integer productId);
 }

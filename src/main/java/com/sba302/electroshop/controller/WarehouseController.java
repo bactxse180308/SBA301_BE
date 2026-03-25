@@ -8,12 +8,12 @@ import com.sba302.electroshop.dto.response.StockItemResponse;
 import com.sba302.electroshop.service.WarehouseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/api/v1/warehouse")
@@ -44,6 +44,26 @@ public class WarehouseController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> exportStock(@Valid @RequestBody StockExportRequest request) {
         warehouseService.exportStock(request);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/orders/{orderId}/export")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> confirmExportForOrder(
+            @PathVariable Integer orderId,
+            @Valid @RequestBody com.sba302.electroshop.dto.request.ConfirmExportRequest request) {
+        warehouseService.confirmExportForOrder(orderId, request);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/bulk-orders/{bulkOrderId}/export")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> confirmExportForBulkOrder(
+            @PathVariable Integer bulkOrderId,
+            @Valid @RequestBody com.sba302.electroshop.dto.request.ConfirmExportRequest request) {
+        warehouseService.confirmExportForBulkOrder(bulkOrderId, request);
         return ApiResponse.success(null);
     }
 

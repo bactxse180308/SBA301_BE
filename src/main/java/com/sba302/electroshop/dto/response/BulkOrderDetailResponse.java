@@ -24,6 +24,8 @@ public class BulkOrderDetailResponse {
     private String productImage;
     private BigDecimal basePrice;
     private String tierLabel;
+    private Integer branchId;
+    private String branchName;
 
     private List<OrderCustomizationResponse> customizations;
 }

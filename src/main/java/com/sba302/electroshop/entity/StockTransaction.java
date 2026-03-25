@@ -23,11 +23,23 @@ public class StockTransaction {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private TransactionType type; // IMPORT / EXPORT
+    private TransactionType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", nullable = false)
     private StoreBranch branch;
+
+    /**
+     * Link đến Order (nullable — BulkOrder dùng bulkOrderId).
+     */
+    @Column(name = "order_id")
+    private Integer orderId;
+
+    /**
+     * Link đến BulkOrder (nullable).
+     */
+    @Column(name = "bulk_order_id")
+    private Integer bulkOrderId;
 
     @Nationalized
     @Column(name = "note", length = 1000)
@@ -36,6 +48,6 @@ public class StockTransaction {
     @Column(name = "created_date")
     private LocalDateTime createdDate;
 
-    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StockTransactionItem> items;
 }

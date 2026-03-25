@@ -7,9 +7,14 @@ import com.sba302.electroshop.dto.response.StockItemResponse;
 import com.sba302.electroshop.entity.*;
 import com.sba302.electroshop.enums.TransactionType;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
+import com.sba302.electroshop.dto.request.ConfirmExportRequest;
+import com.sba302.electroshop.enums.OrderStatus;
+import com.sba302.electroshop.exception.ApiException;
 import com.sba302.electroshop.mapper.WarehouseMapper;
 import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.WarehouseService;
+import com.sba302.electroshop.service.StockTransactionService;
+import com.sba302.electroshop.service.StockTransactionService.ExportLine;
 import com.sba302.electroshop.specification.WarehouseSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +36,10 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final StockTransactionRepository stockTransactionRepository;
     private final ProductRepository productRepository;
     private final StoreBranchRepository storeBranchRepository;
+    private final OrderRepository orderRepository;
+    private final BulkOrderRepository bulkOrderRepository;
+    private final StockTransactionService stockTransactionService;
+    private final com.sba302.electroshop.service.StoreBranchService branchStockService;
     private final WarehouseMapper warehouseMapper;
 
     @Override
@@ -122,6 +131,60 @@ public class WarehouseServiceImpl implements WarehouseService {
         transaction.setItems(items);
         stockTransactionRepository.save(transaction);
         log.info("Stock exported from branch {}: {} items", request.getBranchId(), items.size());
+    }
+
+    @Override
+    @Transactional
+    public void confirmExportForOrder(Integer orderId, ConfirmExportRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        if (order.getOrderStatus() != OrderStatus.PROCESSING) {
+            throw new ApiException("Only PROCESSING orders can be exported.");
+        }
+
+        StoreBranch branch = storeBranchRepository.findById(request.getBranchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + request.getBranchId()));
+
+        List<ExportLine> lines = request.getItems().stream()
+                .map(item -> new ExportLine(item.getProductId(), item.getQuantity(), null))
+                .toList();
+
+        stockTransactionService.recordExport(orderId, null, branch.getBranchId(), lines);
+        log.info("Warehouse branch {} confirmed export for order {}", branch.getBranchId(), orderId);
+        
+        // Cập nhật trạng thái Order -> SHIPPED
+        order.setOrderStatus(OrderStatus.SHIPPED);
+        orderRepository.save(order);
+    }
+
+    @Override
+    @Transactional
+    public void confirmExportForBulkOrder(Integer bulkOrderId, ConfirmExportRequest request) {
+        BulkOrder bulkOrder = bulkOrderRepository.findById(bulkOrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bulk order not found: " + bulkOrderId));
+
+        if (bulkOrder.getStatus() != com.sba302.electroshop.enums.BulkOrderStatus.PROCESSING) {
+            throw new ApiException("Bulk order must be PROCESSING to export.");
+        }
+
+        StoreBranch branch = storeBranchRepository.findById(request.getBranchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + request.getBranchId()));
+
+        // Vì Bulk Order KHÔNG trừ kho lúc tạo, nên lúc xuất kho PHẢI TRỪ KHO THỦ CÔNG
+        for (var item : request.getItems()) {
+            branchStockService.deductExactStock(branch.getBranchId(), item.getProductId(), item.getQuantity());
+        }
+
+        List<ExportLine> lines = request.getItems().stream()
+                .map(item -> new ExportLine(item.getProductId(), item.getQuantity(), null))
+                .toList();
+
+        stockTransactionService.recordExport(null, bulkOrderId, branch.getBranchId(), lines);
+        log.info("Warehouse branch {} confirmed export for bulk order {}", branch.getBranchId(), bulkOrderId);
+
+        bulkOrder.setStatus(com.sba302.electroshop.enums.BulkOrderStatus.SHIPPED);
+        bulkOrderRepository.save(bulkOrder);
     }
 
     @Override
