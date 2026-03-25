@@ -45,4 +45,6 @@ public interface BranchProductStockRepository extends JpaRepository<BranchProduc
             "JOIN FETCH bps.branch " +
             "WHERE bps.product.productId IN :productIds AND bps.quantity > 0")
     List<BranchProductStock> findAllByProductIds(@Param("productIds") Collection<Integer> productIds);
+
+    List<BranchProductStock> findAllByProduct_ProductId(Integer productId);
 }

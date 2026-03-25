@@ -43,6 +43,8 @@ public interface BulkOrderMapper {
     @Mapping(source = "product.productName", target = "productName")
     @Mapping(source = "product.mainImage", target = "productImage")
     @Mapping(source = "product.price", target = "basePrice")
+    @Mapping(source = "branch.branchId", target = "branchId")
+    @Mapping(source = "branch.branchName", target = "branchName")
     @Mapping(target = "customizationFeeConfirmed", ignore = true)
     @Mapping(target = "customizationFeePending", ignore = true)
     @Mapping(target = "lineTotal", ignore = true)

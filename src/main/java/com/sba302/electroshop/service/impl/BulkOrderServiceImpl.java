@@ -15,6 +15,8 @@ import com.sba302.electroshop.repository.*;
 import com.sba302.electroshop.service.BulkOrderService;
 import com.sba302.electroshop.service.CustomerWarrantyService;
 import com.sba302.electroshop.service.EmailService;
+import com.sba302.electroshop.service.StoreBranchService;
+import com.sba302.electroshop.service.StoreBranchService.StockAdjustment;
 import com.sba302.electroshop.service.VoucherService;
 import com.sba302.electroshop.specification.BulkOrderSpecification;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +48,7 @@ class BulkOrderServiceImpl implements BulkOrderService {
     private final VoucherService voucherService;
     private final EmailService emailService;
     private final CustomerWarrantyService customerWarrantyService;
+    private final StoreBranchService storeBranchService;
 
     @Override
     @Transactional(readOnly = true)
@@ -97,15 +101,37 @@ class BulkOrderServiceImpl implements BulkOrderService {
         List<BulkOrderDetail> detailsToSave = new ArrayList<>();
         List<OrderCustomization> customizationsToSave = new ArrayList<>();
 
+        // BƯỚC 4: Tính toán phân bổ chi nhánh (Gợi ý, không trừ kho)
+        List<StoreBranchService.AllocationRequest> allocationRequests = request.getItems().stream()
+                .map(item -> new StoreBranchService.AllocationRequest(item.getProductId(), item.getQuantity()))
+                .toList();
+        
+        StoreBranchService.AllocationResult allocationResult = storeBranchService.calculateBestAllocation(allocationRequests);
+        Map<Integer, BranchProductStock> selectedStockMap = allocationResult.selectedStockMap();
+
+        // Fetch all products at once for performance
+        List<Integer> productIds = request.getItems().stream().map(CreateBulkOrderRequest.BulkOrderItemRequest::getProductId).toList();
+        List<Product> products = productRepository.findAllById(productIds);
+        Map<Integer, Product> productMap = new java.util.HashMap<>();
+        for (Product p : products) {
+            productMap.put(p.getProductId(), p);
+        }
+
+        // BƯỚC 5: Duyệt từng item, tạo detail, tính subtotal
         for (CreateBulkOrderRequest.BulkOrderItemRequest item : request.getItems()) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + item.getProductId()));
+            Product product = productMap.get(item.getProductId());
+            if (product == null) {
+                product = productRepository.findById(item.getProductId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + item.getProductId()));
+            }
 
             BigDecimal unitPrice = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+            BranchProductStock selectedStock = selectedStockMap.get(item.getProductId());
 
             BulkOrderDetail detail = BulkOrderDetail.builder()
                     .bulkOrder(savedOrder)
                     .product(product)
+                    .branch(selectedStock != null ? selectedStock.getBranch() : null)
                     .quantity(item.getQuantity())
                     .unitPriceSnapshot(unitPrice)
                     .discountSnapshot(BigDecimal.ZERO)
@@ -200,7 +226,19 @@ class BulkOrderServiceImpl implements BulkOrderService {
             }
         } else if (status == BulkOrderStatus.REJECTED || status == BulkOrderStatus.CANCELLED) {
             bulkOrder.setCancelReason(note);
-            
+
+            // Restore stock for all details in a single batch
+            List<StockAdjustment> adjustments = bulkOrder.getDetails().stream()
+                    .filter(d -> d.getBranch() != null)
+                    .map(d -> new StockAdjustment(
+                            d.getBranch().getBranchId(),
+                            d.getProduct().getProductId(),
+                            d.getQuantity()))
+                    .toList();
+            if (!adjustments.isEmpty()) {
+                storeBranchService.restoreStockBatch(adjustments);
+            }
+
             if (Boolean.TRUE.equals(bulkOrder.getDiscountApplied()) && bulkOrder.getVoucherCode() != null) {
                 User user = bulkOrder.getUser();
                 if (user != null) {

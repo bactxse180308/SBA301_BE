@@ -17,5 +17,6 @@ public class OrderItemResponse {
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
     private String branchName;
+    private Integer branchId;
 }
 

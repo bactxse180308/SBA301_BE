@@ -22,5 +22,6 @@ public interface OrderMapper {
     @Mapping(source = "product.productName", target = "productName")
     @Mapping(source = "product.mainImage", target = "productImage")
     @Mapping(source = "branch.branchName", target = "branchName")
+    @Mapping(source = "branch.branchId", target = "branchId")
     OrderItemResponse toItemResponse(OrderDetail orderDetail);
 }
