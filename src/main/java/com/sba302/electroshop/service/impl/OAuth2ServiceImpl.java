@@ -91,6 +91,7 @@ class OAuth2ServiceImpl implements OAuth2Service {
                     .password(passwordEncoder.encode(randomSecurePassword)) // Db requires this not to be null
                     .status(UserStatus.ACTIVE)
                     .role(customerRole)
+                    .isEmailVerified(true)
                     .rewardPoint(0)
                     .build();
 
