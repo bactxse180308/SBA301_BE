@@ -33,6 +33,7 @@ public class BulkOrderController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or (#userId != null and authentication.principal.toString() == #userId.toString())")
     public ApiResponse<Page<BulkOrderResponse>> search(
             @RequestParam(required = false) Integer userId,
             @RequestParam(required = false) Integer companyId,
@@ -45,6 +46,7 @@ public class BulkOrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     public ApiResponse<BulkOrderResponse> create(
             @RequestParam Integer userId,
             @Valid @RequestBody CreateBulkOrderRequest request) {
@@ -70,6 +72,7 @@ public class BulkOrderController {
 
     @PostMapping("/details/{detailId}/customization")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<BulkOrderResponse> addCustomization(
             @PathVariable Integer detailId,
             @Valid @RequestBody CreateCustomizationRequest request) {

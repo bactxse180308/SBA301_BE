@@ -5,6 +5,7 @@ import com.sba302.electroshop.dto.response.WishlistResponse;
 import com.sba302.electroshop.service.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,12 +16,14 @@ public class WishlistController {
     private final WishlistService wishlistService;
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.toString() == #userId.toString()")
     public ApiResponse<WishlistResponse> getByUser(@PathVariable Integer userId) {
         return ApiResponse.success(wishlistService.getByUser(userId));
     }
 
     @PostMapping("/{userId}/items/{productId}")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     public ApiResponse<WishlistResponse> addItem(
             @PathVariable Integer userId,
             @PathVariable Integer productId) {
@@ -29,6 +32,7 @@ public class WishlistController {
 
     @DeleteMapping("/{userId}/items/{productId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     public ApiResponse<Void> removeItem(
             @PathVariable Integer userId,
             @PathVariable Integer productId) {
@@ -38,12 +42,14 @@ public class WishlistController {
 
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     public ApiResponse<Void> clearWishlist(@PathVariable Integer userId) {
         wishlistService.clearWishlist(userId);
         return ApiResponse.success(null);
     }
 
     @GetMapping("/{userId}/items/{productId}/check")
+    @PreAuthorize("authentication.principal.toString() == #userId.toString()")
     public ApiResponse<Boolean> isProductInWishlist(
             @PathVariable Integer userId,
             @PathVariable Integer productId) {

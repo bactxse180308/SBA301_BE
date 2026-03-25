@@ -40,6 +40,7 @@ public class CompanyController {
 
     @GetMapping("/my-registration")
     @Operation(summary = "Get my company registration status", description = "User checks their own company's registration status")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<CompanyResponse> getMyRegistration() {
         String userIdStr = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Integer userId = Integer.parseInt(userIdStr);

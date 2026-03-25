@@ -83,8 +83,9 @@ public class UserController {
         return ApiResponse.success(userService.create(request));
     }
 
-    @Operation(summary = "Update user", description = "Update user information by ID (Admin only)")
+    @Operation(summary = "Update user", description = "Update user information by ID (Admin or User themselves)")
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.toString() == #id.toString()")
     public ApiResponse<UserResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -93,6 +94,7 @@ public class UserController {
 
     @Operation(summary = "Update user status", description = "Change user status (ACTIVE/INACTIVE) (Admin only)")
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> updateStatus(
             @PathVariable Integer id,
             @RequestParam UserStatus status) {
@@ -102,6 +104,7 @@ public class UserController {
 
     @Operation(summary = "Add reward points", description = "Add reward points to user account (Admin only)")
     @PostMapping("/{id}/reward-points")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> addRewardPoints(
             @PathVariable Integer id,
             @RequestParam Integer points) {
@@ -112,6 +115,7 @@ public class UserController {
     @Operation(summary = "Delete user", description = "Delete user by ID (Admin only)")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         userService.delete(id);
         return ApiResponse.success(null);
