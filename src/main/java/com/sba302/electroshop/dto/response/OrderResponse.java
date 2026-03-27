@@ -24,5 +24,7 @@ public class OrderResponse {
     private String paymentStatus;
     private String voucherCode;
     private String cancelReason;
+    private LocalDateTime updatedAt;
+    private String updatedBy;
     private List<OrderItemResponse> orderItems;
 }

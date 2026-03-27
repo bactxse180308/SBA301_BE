@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.sba302.electroshop.exception.InvalidStatusTransitionException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -130,6 +131,14 @@ public class GlobalExceptionHandler {
                         "Access denied. You do not have permission to perform this action.",
                         null,
                         LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(InvalidStatusTransitionException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidStatusTransition(InvalidStatusTransitionException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", false);
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     // ✅ 11️⃣ Lỗi hệ thống khác (NullPointer, unexpected,…)
