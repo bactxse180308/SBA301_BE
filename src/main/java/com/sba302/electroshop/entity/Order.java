@@ -68,4 +68,10 @@ public class Order {
     @Nationalized
     @Column(name = "cancel_reason", length = 500)
     private String cancelReason;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
 }

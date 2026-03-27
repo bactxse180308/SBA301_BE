@@ -145,7 +145,22 @@ class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
+        if (!order.getOrderStatus().isValidTransition(newStatus)) {
+            log.warn("Invalid status transition attempt from {} to {} for orderId={}", order.getOrderStatus(), newStatus, orderId);
+            throw new com.sba302.electroshop.exception.InvalidStatusTransitionException(
+                    "Invalid status transition from " + order.getOrderStatus() + " to " + newStatus);
+        }
+
         order.setOrderStatus(newStatus);
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
+            order.setUpdatedBy(auth.getName());
+        } else {
+            order.setUpdatedBy("SYSTEM");
+        }
+
         Order savedOrder = orderRepository.save(order);
 
         if (newStatus == OrderStatus.CONFIRMED) {

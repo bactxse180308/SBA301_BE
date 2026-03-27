@@ -45,9 +45,17 @@ public class OrderController {
         return ApiResponse.success(orderService.placeOrder(userId, request));
     }
 
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<OrderResponse> updateStatusPut(
+            @PathVariable Integer id,
+            @Valid @RequestBody com.sba302.electroshop.dto.request.UpdateOrderStatusRequest request) {
+        return ApiResponse.success(orderService.updateStatus(id, request.getStatus()));
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<OrderResponse> updateStatus(
+    public ApiResponse<OrderResponse> updateStatusPatch(
             @PathVariable Integer id,
             @RequestParam OrderStatus status) {
         return ApiResponse.success(orderService.updateStatus(id, status));
