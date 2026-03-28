@@ -62,7 +62,7 @@ public class VNPayServiceImpl implements VNPayService {
             // NORMAL order
             normalOrder = orderRepository.findById(orderId)
                     .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-            totalAmount = normalOrder.getTotalAmount();
+            totalAmount = normalOrder.getFinalAmount();
         }
 
         if (totalAmount == null || totalAmount.compareTo(BigDecimal.valueOf(5000)) < 0) {
