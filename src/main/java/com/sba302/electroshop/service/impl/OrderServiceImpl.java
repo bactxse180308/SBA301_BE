@@ -18,6 +18,7 @@ import com.sba302.electroshop.service.OrderService;
 import com.sba302.electroshop.service.StockTransactionService;
 import com.sba302.electroshop.service.StoreBranchService;
 import com.sba302.electroshop.service.VoucherService;
+import com.sba302.electroshop.service.ShoppingCartService;
 import com.sba302.electroshop.dto.response.VoucherApplicationResult;
 import com.sba302.electroshop.specification.OrderSpecification;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ class OrderServiceImpl implements OrderService {
     private final CustomerWarrantyService customerWarrantyService;
     private final StoreBranchService storeBranchService;
     private final StockTransactionService stockTransactionService;
+    private final ShoppingCartService shoppingCartService;
 
     // ================================================================
     // PUBLIC METHODS
@@ -122,6 +124,14 @@ class OrderServiceImpl implements OrderService {
 
             voucherService.markVoucherAsUsed(voucherResult.getUserVoucher().getUserVoucherId());
             Order savedOrder = orderRepository.save(order);
+            
+            for (var item : request.getItems()) {
+                try {
+                    shoppingCartService.removeItem(userId, item.getProductId());
+                } catch (Exception e) {
+                    log.warn("Failed to remove product {} from cart for user {}", item.getProductId(), userId, e);
+                }
+            }
 
             log.info("Order placed with voucher, id={}, discount={}", savedOrder.getOrderId(), discount);
             return orderMapper.toResponse(savedOrder);
@@ -133,6 +143,15 @@ class OrderServiceImpl implements OrderService {
         order.setFinalAmount(totalAmount);
 
         Order savedOrder = orderRepository.save(order);
+
+        for (var item : request.getItems()) {
+            try {
+                shoppingCartService.removeItem(userId, item.getProductId());
+            } catch (Exception e) {
+                log.warn("Failed to remove product {} from cart for user {}", item.getProductId(), userId, e);
+            }
+        }
+
         log.info("Order placed successfully with id={}", savedOrder.getOrderId());
         return orderMapper.toResponse(savedOrder);
     }
