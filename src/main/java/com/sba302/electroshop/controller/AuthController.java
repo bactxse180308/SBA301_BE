@@ -1,9 +1,11 @@
 package com.sba302.electroshop.controller;
 
+import com.sba302.electroshop.dto.request.ForgotPasswordRequest;
 import com.sba302.electroshop.dto.request.LoginRequest;
 import com.sba302.electroshop.dto.request.OAuth2Request;
 import com.sba302.electroshop.dto.request.RefreshTokenRequest;
 import com.sba302.electroshop.dto.request.RegisterRequest;
+import com.sba302.electroshop.dto.request.ResetPasswordRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
 import com.sba302.electroshop.dto.response.AuthResponse;
 import com.sba302.electroshop.dto.response.TokenResponse;
@@ -70,5 +72,19 @@ public class AuthController {
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(frontendUrl + "/login?verified=true"));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Forgot password", description = "Send OTP to reset password")
+    public ApiResponse<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ApiResponse.success("OTP has been sent successfully to your email.");
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password", description = "Reset password using OTP")
+    public ApiResponse<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.success("Password has been reset successfully.");
     }
 }

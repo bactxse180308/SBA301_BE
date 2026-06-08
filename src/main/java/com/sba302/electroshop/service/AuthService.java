@@ -1,8 +1,10 @@
 package com.sba302.electroshop.service;
 
+import com.sba302.electroshop.dto.request.ForgotPasswordRequest;
 import com.sba302.electroshop.dto.request.LoginRequest;
 import com.sba302.electroshop.dto.request.RefreshTokenRequest;
 import com.sba302.electroshop.dto.request.RegisterRequest;
+import com.sba302.electroshop.dto.request.ResetPasswordRequest;
 import com.sba302.electroshop.dto.response.AuthResponse;
 import com.sba302.electroshop.dto.response.TokenResponse;
 
@@ -14,4 +16,8 @@ public interface AuthService {
     TokenResponse refreshToken(RefreshTokenRequest request);
 
     void verifyEmail(String token);
+
+    void forgotPassword(ForgotPasswordRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
 }

@@ -21,6 +21,8 @@ import com.sba302.electroshop.service.VoucherService;
 import com.sba302.electroshop.service.ShoppingCartService;
 import com.sba302.electroshop.dto.response.VoucherApplicationResult;
 import com.sba302.electroshop.specification.OrderSpecification;
+import com.sba302.electroshop.enums.NotificationType;
+import com.sba302.electroshop.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,6 +53,7 @@ class OrderServiceImpl implements OrderService {
     private final StoreBranchService storeBranchService;
     private final StockTransactionService stockTransactionService;
     private final ShoppingCartService shoppingCartService;
+    private final NotificationService notificationService;
 
     // ================================================================
     // PUBLIC METHODS
@@ -134,6 +137,12 @@ class OrderServiceImpl implements OrderService {
             }
 
             log.info("Order placed with voucher, id={}, discount={}", savedOrder.getOrderId(), discount);
+            notificationService.createNotification(
+                    userId,
+                    "Đặt hàng thành công",
+                    "Đơn hàng #" + savedOrder.getOrderId() + " của bạn đã được đặt thành công (sử dụng Voucher).",
+                    NotificationType.ORDER
+            );
             return orderMapper.toResponse(savedOrder);
         }
 
@@ -153,6 +162,12 @@ class OrderServiceImpl implements OrderService {
         }
 
         log.info("Order placed successfully with id={}", savedOrder.getOrderId());
+        notificationService.createNotification(
+                userId,
+                "Đặt hàng thành công",
+                "Đơn hàng #" + savedOrder.getOrderId() + " của bạn đã được đặt thành công.",
+                NotificationType.ORDER
+        );
         return orderMapper.toResponse(savedOrder);
     }
 
@@ -204,6 +219,24 @@ class OrderServiceImpl implements OrderService {
             customerWarrantyService.createFromOrder(savedOrder);
         }
 
+        String notifTitle = "Cập nhật đơn hàng #" + orderId;
+        String notifBody = "";
+        switch (newStatus) {
+            case CONFIRMED:
+                notifBody = "Đơn hàng #" + orderId + " đã được xác nhận và đang chuẩn bị hàng.";
+                break;
+            case SHIPPED:
+                notifBody = "Đơn hàng #" + orderId + " đang được giao đến bạn.";
+                break;
+            case DELIVERED:
+                notifBody = "Đơn hàng #" + orderId + " đã được giao thành công. Cảm ơn bạn đã mua sắm!";
+                break;
+            default:
+                notifBody = "Đơn hàng #" + orderId + " đã chuyển sang trạng thái " + newStatus + ".";
+                break;
+        }
+        notificationService.createNotification(order.getUser().getUserId(), notifTitle, notifBody, NotificationType.ORDER);
+
         return orderMapper.toResponse(savedOrder);
     }
 
@@ -242,6 +275,13 @@ class OrderServiceImpl implements OrderService {
         
         initializeLazyFieldsForEmail(order);
         emailService.sendOrderCancellationEmail(order, reason);
+        
+        notificationService.createNotification(
+                order.getUser().getUserId(),
+                "Hủy đơn hàng #" + orderId,
+                "Đơn hàng #" + orderId + " đã bị hủy. Lý do: " + reason,
+                NotificationType.ORDER
+        );
         
         log.info("Order cancelled and resources restored: id={}", orderId);
     }

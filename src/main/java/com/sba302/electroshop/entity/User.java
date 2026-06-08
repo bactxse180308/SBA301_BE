@@ -63,6 +63,10 @@ public class User {
     @JoinColumn(name = "company_id")
     private Company company; // Chỉ có giá trị khi role = COMPANY, null với CUSTOMER/ADMIN
 
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
     @PrePersist
     protected void onCreate() {
         if (registrationDate == null) {
@@ -76,6 +80,9 @@ public class User {
         }
         if (isEmailVerified == null) {
             isEmailVerified = false;
+        }
+        if (isDeleted == null) {
+            isDeleted = false;
         }
     }
 }

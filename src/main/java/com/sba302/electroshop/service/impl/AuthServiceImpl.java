@@ -1,8 +1,10 @@
 package com.sba302.electroshop.service.impl;
 
+import com.sba302.electroshop.dto.request.ForgotPasswordRequest;
 import com.sba302.electroshop.dto.request.LoginRequest;
 import com.sba302.electroshop.dto.request.RefreshTokenRequest;
 import com.sba302.electroshop.dto.request.RegisterRequest;
+import com.sba302.electroshop.dto.request.ResetPasswordRequest;
 import com.sba302.electroshop.dto.response.AuthResponse;
 import com.sba302.electroshop.dto.response.TokenResponse;
 import com.sba302.electroshop.entity.Role;
@@ -15,6 +17,7 @@ import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.security.JwtUtil;
 import com.sba302.electroshop.service.AuthService;
 import com.sba302.electroshop.service.EmailService;
+import com.sba302.electroshop.service.OtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
         private final PasswordEncoder passwordEncoder;
         private final JwtUtil jwtUtil;
         private final EmailService emailService;
+        private final OtpService otpService;
 
         @Value("${app.api-base-url:http://localhost:8080}")
         private String apiBaseUrl;
@@ -55,9 +59,6 @@ public class AuthServiceImpl implements AuthService {
                 Role customerRole = roleRepository.findByRoleName("CUSTOMER")
                                 .orElseThrow(() -> new ApiException("CUSTOMER role not found"));
 
-                // Generate verification token
-                String verificationToken = UUID.randomUUID().toString();
-
                 // Create new user (formerly Customer)
                 User user = User.builder()
                                 .email(request.getEmail())
@@ -65,20 +66,25 @@ public class AuthServiceImpl implements AuthService {
                                 .fullName(request.getFullName())
                                 .phoneNumber(request.getPhoneNumber())
                                 .role(customerRole)
-                                .status(UserStatus.PENDING)
-                                .isEmailVerified(false)
-                                .verificationToken(verificationToken)
+                                .status(UserStatus.PENDING) // Set to PENDING to require OTP activation
+                                .isEmailVerified(false)     // Set to false to require OTP activation
                                 .rewardPoint(0)
                                 .registrationDate(LocalDateTime.now())
                                 .build();
 
                 user = userRepository.save(user);
 
-                log.info("User registered successfully with ID: {}. Sending verification email.", user.getUserId());
+                log.info("User registered successfully with ID: {}. Triggering automatic OTP generation.", user.getUserId());
 
-                // Send verification email
-                String verificationUrl = apiBaseUrl + "/api/v1/auth/verify?token=" + verificationToken;
-                emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), verificationUrl);
+                // Automatically generate and send OTP email upon successful registration
+                try {
+                    otpService.invalidateOtp(user.getEmail());
+                    String otp = otpService.generateAndStoreOtp(user.getEmail());
+                    emailService.sendOtpEmail(user.getEmail(), otp);
+                    log.info("Successfully sent registration OTP to: {}", user.getEmail());
+                } catch (Exception e) {
+                    log.error("Failed to send registration OTP email to: {}", user.getEmail(), e);
+                }
 
                 return AuthResponse.builder()
                                 .userId(user.getUserId())
@@ -95,11 +101,6 @@ public class AuthServiceImpl implements AuthService {
                 // Find user by email
                 User user = userRepository.findByEmail(request.getEmail())
                                 .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
-
-                // Check if email is verified (Skip for ADMIN)
-                if (!"ADMIN".equals(user.getRole().getRoleName()) && !Boolean.TRUE.equals(user.getIsEmailVerified())) {
-                        throw new ApiException("Email not verified. Please check your inbox.");
-                }
 
                 // Check if user is active
                 if (user.getStatus() != UserStatus.ACTIVE) {
@@ -201,5 +202,59 @@ public class AuthServiceImpl implements AuthService {
                                 .refreshToken(newRefreshToken)
                                 .expiresIn(3600L) // 1 hour in seconds
                                 .build();
+        }
+
+        @Override
+        @Transactional
+        public void forgotPassword(ForgotPasswordRequest request) {
+                String email = request.getEmail();
+                log.info("Request forgot password for email: {}", email);
+
+                // Check if user exists
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+                if (user.getIsDeleted()) {
+                        throw new ApiException("User account is deleted.");
+                }
+
+                // Generate and send OTP for forgot password
+                try {
+                    otpService.invalidateOtp(email);
+                    String otp = otpService.generateAndStoreOtp(email);
+                    emailService.sendOtpEmail(email, otp);
+                    log.info("Sent forgot password OTP to: {}", email);
+                } catch (Exception e) {
+                    log.error("Failed to send forgot password OTP to: {}", email, e);
+                    throw new ApiException("Failed to send OTP. Please try again.");
+                }
+        }
+
+        @Override
+        @Transactional
+        public void resetPassword(ResetPasswordRequest request) {
+                String email = request.getEmail();
+                String otp = request.getOtp();
+                String newPassword = request.getNewPassword();
+                log.info("Resetting password for email: {}", email);
+
+                // Verify OTP
+                boolean isValid = otpService.verifyOtp(email, otp);
+                if (!isValid) {
+                        throw new ApiException("Invalid or expired OTP.");
+                }
+
+                // Update password
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+                user.setPassword(passwordEncoder.encode(newPassword));
+                
+                // Verify email and activate if it was pending
+                user.setIsEmailVerified(true);
+                user.setStatus(UserStatus.ACTIVE);
+                
+                userRepository.save(user);
+                log.info("Password reset successfully for email: {}", email);
         }
 }
