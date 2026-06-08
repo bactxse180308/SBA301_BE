@@ -3,6 +3,9 @@ package com.sba302.electroshop.controller;
 import com.sba302.electroshop.dto.request.OtpSendRequest;
 import com.sba302.electroshop.dto.request.OtpVerifyRequest;
 import com.sba302.electroshop.dto.response.ApiResponse;
+import com.sba302.electroshop.entity.User;
+import com.sba302.electroshop.enums.UserStatus;
+import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.service.EmailService;
 import com.sba302.electroshop.service.OtpService;
 import jakarta.validation.Valid;
@@ -17,6 +20,7 @@ public class OtpController {
 
     private final OtpService otpService;
     private final EmailService emailService;
+    private final UserRepository userRepository;
 
     @PostMapping("/send")
     public ApiResponse<String> sendOtp(@Valid @RequestBody OtpSendRequest request) {
@@ -36,6 +40,14 @@ public class OtpController {
         boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtp());
         
         if (isValid) {
+            userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+                if (user.getStatus() == UserStatus.PENDING || !user.getIsEmailVerified()) {
+                    user.setIsEmailVerified(true);
+                    user.setStatus(UserStatus.ACTIVE);
+                    user.setVerificationToken(null);
+                    userRepository.save(user);
+                }
+            });
             return ApiResponse.success("OTP verified successfully.");
         } else {
             return ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Invalid or expired OTP.");
