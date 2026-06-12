@@ -136,28 +136,31 @@ class ShoppingCartServiceImpl implements ShoppingCartService {
 
     @Override
     @Transactional
-    public void removeItem(Integer userId, Integer productId) {
+    public void clearCart(Integer userId) {
         ShoppingCart cart = shoppingCartRepository
                 .findByUser_UserId(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Cart not found"));
+                .orElse(null);
 
-        CartItem item = cartItemRepository
-                .findByCart_CartIdAndProduct_ProductId(cart.getCartId(), productId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Cart item not found"));
+        if (cart == null) return; // Không có cart thì bỏ qua
 
-        cartItemRepository.delete(item);
+        cartItemRepository.deleteByCart_CartId(cart.getCartId());
     }
 
     @Override
     @Transactional
-    public void clearCart(Integer userId) {
+    public void removeItem(Integer userId, Integer productId) {
         ShoppingCart cart = shoppingCartRepository
                 .findByUser_UserId(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Cart not found"));
+                .orElse(null);
 
-        cartItemRepository.deleteByCart_CartId(cart.getCartId());
+        if (cart == null) return; // Không có cart thì bỏ qua
+
+        CartItem item = cartItemRepository
+                .findByCart_CartIdAndProduct_ProductId(cart.getCartId(), productId)
+                .orElse(null);
+
+        if (item == null) return; // Không có item thì bỏ qua
+
+        cartItemRepository.delete(item);
     }
 }

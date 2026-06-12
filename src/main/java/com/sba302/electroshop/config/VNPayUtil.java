@@ -31,6 +31,10 @@ public class VNPayUtil {
         }
     }
 
+    /**
+     * Build URL query string for VNPay payment URL.
+     * Format: URLEncode(key)=URLEncode(value)&...  (sort by key A-Z)
+     */
     public static String buildQueryString(Map<String, String> params) {
         StringBuilder sb = new StringBuilder();
         TreeMap<String, String> sorted = new TreeMap<>(params);
@@ -45,14 +49,22 @@ public class VNPayUtil {
         return sb.toString();
     }
 
+    /**
+     * Build hash data string for HMAC-SHA512 signing — per VNPay official spec.
+     * Format: key=URLEncode(value)&key=URLEncode(value)&...  (sort by key A-Z)
+     * IMPORTANT: Keys are NOT URL-encoded. Only values are URL-encoded.
+     * vnp_SecureHash and vnp_SecureHashType must be excluded before calling this method.
+     */
     public static String buildHashData(Map<String, String> params) {
         StringBuilder sb = new StringBuilder();
         TreeMap<String, String> sorted = new TreeMap<>(params);
         for (Map.Entry<String, String> entry : sorted.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
                 if (!sb.isEmpty()) sb.append("&");
-                sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
+                // Keys are plain ASCII (vnp_*) — do NOT URL-encode per VNPay spec
+                sb.append(entry.getKey());
                 sb.append("=");
+                // Values must be URL-encoded
                 sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
             }
         }

@@ -123,7 +123,9 @@ class OrderServiceImpl implements OrderService {
             order.setTotalAmount(totalAmount);
             order.setDiscountAmount(discount);
             order.setFinalAmount(finalAmount);
-            order.setUserVoucher(voucherResult.getUserVoucher());
+            if (voucherResult.getUserVoucher().getUserVoucherId() != null) {
+                order.setUserVoucher(voucherResult.getUserVoucher());
+            }
 
             voucherService.markVoucherAsUsed(voucherResult.getUserVoucher().getUserVoucherId());
             Order savedOrder = orderRepository.save(order);
@@ -154,11 +156,7 @@ class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
 
         for (var item : request.getItems()) {
-            try {
                 shoppingCartService.removeItem(userId, item.getProductId());
-            } catch (Exception e) {
-                log.warn("Failed to remove product {} from cart for user {}", item.getProductId(), userId, e);
-            }
         }
 
         log.info("Order placed successfully with id={}", savedOrder.getOrderId());
