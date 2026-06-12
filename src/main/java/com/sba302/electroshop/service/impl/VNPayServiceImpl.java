@@ -92,6 +92,7 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_IpAddr", ipAddr);
         params.put("vnp_CreateDate", createDate);
         params.put("vnp_ExpireDate", expireDate);
+        params.put("vnp_NotifyUrl", vnPayProperties.getIpnUrl());
 
         String hashData = VNPayUtil.buildHashData(params);
         String secureHash = VNPayUtil.hmacSHA512(vnPayProperties.getHashSecret(), hashData);
