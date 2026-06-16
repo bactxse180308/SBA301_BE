@@ -36,6 +36,19 @@ public class OrderController {
         return ApiResponse.success(orderService.search(userId, status, pageable));
     }
 
+    /**
+     * GET /api/v1/orders/user/{userId}?page=0&size=10
+     * Endpoint riêng cho mobile client — tránh conflict với GET /{id}.
+     */
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.toString() == #userId.toString()")
+    public ApiResponse<Page<OrderResponse>> getByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(required = false) OrderStatus status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.success(orderService.search(userId, status, pageable));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("authentication.principal.toString() == #userId.toString()")
@@ -61,7 +74,7 @@ public class OrderController {
         return ApiResponse.success(orderService.updateStatus(id, status));
     }
 
-    @PostMapping("/{id}/cancel")
+    @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasRole('ADMIN') or @orderSecurity.isOwner(#id)")
     public ApiResponse<Void> cancelOrder(
             @PathVariable Integer id,

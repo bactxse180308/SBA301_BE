@@ -245,15 +245,14 @@ class OrderServiceImpl implements OrderService {
     public void cancelOrder(Integer orderId, String reason) {
         log.info("Cancelling order: orderId={}, reason={}", orderId, reason);
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+        try {
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        // 1. Validate status cancellable
-        if (order.getOrderStatus() == OrderStatus.CANCELLED ||
-                order.getOrderStatus() == OrderStatus.DELIVERED ||
-                order.getOrderStatus() == OrderStatus.SHIPPED) {
-            throw new ApiException("Order cannot be cancelled in status: " + order.getOrderStatus());
-        }
+            // 1. Validate status cancellable
+            if (order.getOrderStatus() != OrderStatus.PENDING) {
+                throw new ApiException("Only PENDING orders can be cancelled. Current status: " + order.getOrderStatus());
+            }
 
         // 2. Record cancellation (smart: RELEASED or IMPORT per branch) + restore stock
         List<OrderDetail> details = orderDetailRepository.findByOrderId(orderId);
@@ -283,7 +282,14 @@ class OrderServiceImpl implements OrderService {
                 NotificationType.ORDER
         );
         
-        log.info("Order cancelled and resources restored: id={}", orderId);
+            log.info("Order cancelled and resources restored: id={}", orderId);
+        } catch (ApiException | ResourceNotFoundException e) {
+            log.error("Failed to cancel order: orderId={}, reason={}", orderId, reason, e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while cancelling order: orderId={}, reason={}", orderId, reason, e);
+            throw new ApiException("Failed to cancel order: " + e.getMessage());
+        }
     }
 
     // ================================================================
