@@ -90,4 +90,18 @@ class NotificationServiceImpl implements NotificationService {
         }
         return notificationRepository.countByUser_UserIdAndIsReadFalse(userId);
     }
+
+    @Override
+    @Transactional
+    public void deleteNotification(Integer notificationId, Integer userId) {
+        log.info("Deleting notification id={} for userId={}", notificationId, userId);
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
+
+        if (!notification.getUser().getUserId().equals(userId)) {
+            throw new ApiException("You do not have permission to modify this notification.");
+        }
+
+        notificationRepository.delete(notification);
+    }
 }
