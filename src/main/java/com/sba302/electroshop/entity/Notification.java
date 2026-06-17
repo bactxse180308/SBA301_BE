@@ -3,6 +3,7 @@ package com.sba302.electroshop.entity;
 import com.sba302.electroshop.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.time.LocalDateTime;
 
 @Entity
@@ -23,9 +24,11 @@ public class Notification {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Nationalized
     @Column(name = "title", nullable = false)
     private String title;
 
+    @Nationalized
     @Column(name = "body", nullable = false, length = 1000)
     private String body;
 

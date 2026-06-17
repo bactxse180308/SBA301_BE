@@ -84,4 +84,12 @@ public class NotificationController {
                 .createdAt(notification.getCreatedAt())
                 .build();
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete notification", description = "Delete a specific notification for the authenticated user")
+    public ApiResponse<Void> deleteNotification(@PathVariable Integer id) {
+        Integer userId = getCurrentUserId();
+        notificationService.deleteNotification(id, userId);
+        return ApiResponse.success(null);
+    }
 }
