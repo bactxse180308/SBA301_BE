@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -93,11 +94,16 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_CreateDate", createDate);
         params.put("vnp_ExpireDate", expireDate);
 
+        log.info("=== VNPAY CREATE PARAMS ===");
+        new TreeMap<>(params).forEach((key, value) -> log.info("{}={}", key, value));
+
         String hashData = VNPayUtil.buildHashData(params);
+        log.info("VNPay hash data: {}", hashData);
         String secureHash = VNPayUtil.hmacSHA512(vnPayProperties.getHashSecret(), hashData);
         params.put("vnp_SecureHash", secureHash);
 
         String paymentUrl = vnPayProperties.getPaymentUrl() + "?" + VNPayUtil.buildQueryString(params);
+        log.info("VNPay final payment URL: {}", paymentUrl);
 
         // Lưu transaction, gán order hoặc bulkOrder tương ứng
         PaymentTransaction transaction = PaymentTransaction.builder()
@@ -155,8 +161,18 @@ public class VNPayServiceImpl implements VNPayService {
             return result;
         }
 
+        boolean isSuccess = "00".equals(responseCode)
+                && ("00".equals(transactionStatus) || transactionStatus == null);
+
         if (transaction.getStatus() != PaymentStatus.PENDING) {
             log.warn("VNPay IPN: Transaction already processed. txnRef={}, status={}", txnRef, transaction.getStatus());
+            if (isSuccess) {
+                applySuccessfulPayment(transaction);
+                paymentTransactionRepository.save(transaction);
+                result.put("RspCode", "00");
+                result.put("Message", "Confirm Success");
+                return result;
+            }
             result.put("RspCode", "02");
             result.put("Message", "Transaction already confirmed");
             return result;
@@ -179,8 +195,6 @@ public class VNPayServiceImpl implements VNPayService {
         transaction.setPayDate(payDate);
         transaction.setUpdatedAt(LocalDateTime.now());
 
-        boolean isSuccess = "00".equals(responseCode) && "00".equals(transactionStatus);
-
         if (transaction.getPaymentType() == PaymentType.BULK) {
             // --- Xử lý BulkOrder ---
             BulkOrder bulkOrder = transaction.getBulkOrder();
@@ -200,11 +214,7 @@ public class VNPayServiceImpl implements VNPayService {
             // --- Xử lý Normal Order ---
             Order order = transaction.getOrder();
             if (isSuccess) {
-                transaction.setStatus(PaymentStatus.SUCCESS);
-                order.setOrderStatus(OrderStatus.CONFIRMED);
-                order.setPaymentMethod("VNPAY");
-                order.setPaymentStatus(PaymentStatus.SUCCESS);
-                orderRepository.save(order);
+                applySuccessfulPayment(transaction);
                 log.info("VNPay IPN: Normal order payment success. txnRef={}, orderId={}", txnRef, order.getOrderId());
             } else {
                 transaction.setStatus(PaymentStatus.FAILED);
@@ -232,13 +242,21 @@ public class VNPayServiceImpl implements VNPayService {
 
         String txnRef = params.get("vnp_TxnRef");
         String responseCode = params.get("vnp_ResponseCode");
+        String transactionStatus = params.get("vnp_TransactionStatus");
 
         PaymentTransaction transaction = paymentTransactionRepository.findByTxnRef(txnRef)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + txnRef));
 
-        // Return URL chỉ cập nhật nếu transaction vẫn đang PENDING (IPN chưa xử lý)
-        if (validHash && transaction.getStatus() == PaymentStatus.PENDING) {
-            String transactionStatus = params.get("vnp_TransactionStatus");
+        log.info("VNPay Return validHash={}", validHash);
+        log.info("VNPay Return txnStatus={}", transaction.getStatus());
+        log.info("VNPay Return responseCode={}", responseCode);
+        log.info("VNPay Return transactionStatus={}", transactionStatus);
+
+        boolean isSuccess = "00".equals(responseCode)
+                && ("00".equals(transactionStatus) || transactionStatus == null);
+
+        // Return must sync the order even if IPN already marked the transaction SUCCESS.
+        if (validHash && isSuccess) {
             transaction.setResponseCode(responseCode);
             transaction.setTransactionStatus(transactionStatus);
             transaction.setTransactionNo(params.get("vnp_TransactionNo"));
@@ -248,32 +266,34 @@ public class VNPayServiceImpl implements VNPayService {
             transaction.setPayDate(params.get("vnp_PayDate"));
             transaction.setUpdatedAt(LocalDateTime.now());
 
-            boolean isSuccess = "00".equals(responseCode) && "00".equals(transactionStatus);
+            if (transaction.getPaymentType() == PaymentType.BULK) {
+                BulkOrder bulkOrder = transaction.getBulkOrder();
+                transaction.setStatus(PaymentStatus.SUCCESS);
+                bulkOrder.setStatus(BulkOrderStatus.PAID);
+                bulkOrderRepository.save(bulkOrder);
+            } else {
+                applySuccessfulPayment(transaction);
+            }
+            paymentTransactionRepository.save(transaction);
+        } else if (validHash && transaction.getStatus() == PaymentStatus.PENDING) {
+            transaction.setResponseCode(responseCode);
+            transaction.setTransactionStatus(transactionStatus);
+            transaction.setTransactionNo(params.get("vnp_TransactionNo"));
+            transaction.setBankCode(params.get("vnp_BankCode"));
+            transaction.setBankTranNo(params.get("vnp_BankTranNo"));
+            transaction.setCardType(params.get("vnp_CardType"));
+            transaction.setPayDate(params.get("vnp_PayDate"));
+            transaction.setUpdatedAt(LocalDateTime.now());
+            transaction.setStatus(PaymentStatus.FAILED);
 
             if (transaction.getPaymentType() == PaymentType.BULK) {
                 BulkOrder bulkOrder = transaction.getBulkOrder();
-                if (isSuccess) {
-                    transaction.setStatus(PaymentStatus.SUCCESS);
-                    bulkOrder.setStatus(BulkOrderStatus.PAID);
-                    bulkOrderRepository.save(bulkOrder);
-                } else {
-                    transaction.setStatus(PaymentStatus.FAILED);
-                    bulkOrder.setStatus(BulkOrderStatus.AWAITING_PAYMENT);
-                    bulkOrderRepository.save(bulkOrder);
-                }
+                bulkOrder.setStatus(BulkOrderStatus.AWAITING_PAYMENT);
+                bulkOrderRepository.save(bulkOrder);
             } else {
                 Order order = transaction.getOrder();
-                if (isSuccess) {
-                    transaction.setStatus(PaymentStatus.SUCCESS);
-                    order.setOrderStatus(OrderStatus.CONFIRMED);
-                    order.setPaymentMethod("VNPAY");
-                    order.setPaymentStatus(PaymentStatus.SUCCESS);
-                    orderRepository.save(order);
-                } else {
-                    transaction.setStatus(PaymentStatus.FAILED);
-                    order.setPaymentStatus(PaymentStatus.FAILED);
-                    orderRepository.save(order);
-                }
+                order.setPaymentStatus(PaymentStatus.FAILED);
+                orderRepository.save(order);
             }
             paymentTransactionRepository.save(transaction);
         }
@@ -291,6 +311,25 @@ public class VNPayServiceImpl implements VNPayService {
     }
 
     // ======================== PRIVATE HELPERS ========================
+
+    private void applySuccessfulPayment(PaymentTransaction transaction) {
+        transaction.setStatus(PaymentStatus.SUCCESS);
+
+        if (transaction.getPaymentType() == PaymentType.NORMAL) {
+            Order order = transaction.getOrder();
+            order.setPaymentMethod("VNPAY");
+            order.setPaymentStatus(PaymentStatus.SUCCESS);
+            order.setOrderStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+
+            log.info(
+                    "Order updated after VNPay success: orderId={}, paymentStatus={}, orderStatus={}",
+                    order.getOrderId(),
+                    order.getPaymentStatus(),
+                    order.getOrderStatus()
+            );
+        }
+    }
 
     private boolean verifySecureHash(Map<String, String> params, String receivedHash) {
         if (receivedHash == null || receivedHash.isEmpty()) return false;
