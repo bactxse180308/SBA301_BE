@@ -36,6 +36,17 @@ public class PaymentController {
         return ApiResponse.success(response);
     }
 
+    @PostMapping("/vnpay/create/{orderId}")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<VNPayPaymentUrlResponse> createPaymentByOrderId(
+            @PathVariable Integer orderId,
+            @RequestParam(defaultValue = "NORMAL") PaymentType type,
+            HttpServletRequest request) {
+        String ipAddr = getClientIp(request);
+        VNPayPaymentUrlResponse response = vnPayService.createPaymentUrl(orderId, ipAddr, type);
+        return ApiResponse.success(response);
+    }
+
     @GetMapping("/vnpay/ipn")
     public ResponseEntity<Map<String, String>> vnpayIpn(@RequestParam Map<String, String> params) {
         log.info("VNPay IPN received: {}", params);
@@ -70,6 +81,13 @@ public class PaymentController {
         }
         if (ip != null && ip.contains(",")) {
             ip = ip.split(",")[0].trim();
+        }
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+            return "127.0.0.1";
+        }
+        if (ip != null && ip.contains(":")) {
+            log.warn("VNPay does not accept IPv6 vnp_IpAddr values. Falling back to 127.0.0.1. originalIp={}", ip);
+            return "127.0.0.1";
         }
         return ip;
     }
