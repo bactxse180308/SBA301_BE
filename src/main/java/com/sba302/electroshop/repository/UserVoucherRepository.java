@@ -15,7 +15,12 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucher, Intege
     @Query("SELECT uv FROM UserVoucher uv JOIN FETCH uv.voucher v WHERE uv.user.userId = :userId AND v.voucherCode = :code")
     Optional<UserVoucher> findByUserIdAndVoucherCode(@Param("userId") Integer userId, @Param("code") String code);
 
+    @Query("SELECT COUNT(uv) FROM UserVoucher uv WHERE uv.user.userId = :userId")
+    Long countByUserId(@Param("userId") Integer userId);
+
     Optional<UserVoucher> findByUser_UserIdAndVoucher_VoucherCode(Integer userId, String voucherCode);
+
+    boolean existsByVoucher_VoucherId(Integer voucherId);
 
     @Query("SELECT uv.user.userId FROM UserVoucher uv " +
             "WHERE uv.voucher.voucherId = :voucherId " +

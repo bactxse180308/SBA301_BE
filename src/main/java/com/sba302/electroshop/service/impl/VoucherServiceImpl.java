@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -192,43 +193,21 @@ class VoucherServiceImpl implements VoucherService {
 
     @Override
     public UserVoucher validateAndGetVoucher(String code, Integer userId, BigDecimal orderTotal) {
-        UserVoucher userVoucher = userVoucherRepository.findByUserIdAndVoucherCode(userId, code)
-                .orElseThrow(() -> new IllegalArgumentException("Voucher not found or not assigned to user: " + code));
+        log.info("=== Looking for userVoucher: userId={}, code={}", userId, code);
+        Long userVoucherCount = userVoucherRepository.countByUserId(userId);
+        log.info("=== UserVoucher count for userId={}: {}", userId, userVoucherCount);
+        Optional<UserVoucher> found = userVoucherRepository.findByUserIdAndVoucherCode(userId, code);
+        log.info("=== Found: {}", found.isPresent());
 
-        if (userVoucher.getStatus() != VoucherStatus.AVAILABLE) {
-            throw new IllegalArgumentException("Voucher is not available for use.");
-        }
-
-        Voucher voucher = userVoucher.getVoucher();
-
-        if (Boolean.FALSE.equals(voucher.getIsActive())) {
-            throw new IllegalArgumentException("Voucher is inactive.");
-        }
-
-        if (Boolean.FALSE.equals(voucher.getIsValid())) {
-            throw new IllegalArgumentException("Voucher is currently invalid.");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        if (voucher.getValidFrom() != null && now.isBefore(voucher.getValidFrom())) {
-            throw new IllegalArgumentException("Voucher is not yet valid.");
-        }
-
-        if (voucher.getValidTo() != null && now.isAfter(voucher.getValidTo())) {
-            throw new IllegalArgumentException("Voucher has expired.");
-        }
-
-        if (voucher.getUsageLimit() != null && voucher.getUsedCount() != null
-                && voucher.getUsedCount() >= voucher.getUsageLimit()) {
-            throw new IllegalArgumentException("Voucher usage limit reached.");
-        }
-
-        if (voucher.getMinOrderValue() != null && orderTotal != null
-                && orderTotal.compareTo(voucher.getMinOrderValue()) < 0) {
-            throw new IllegalArgumentException("Order total does not meet the minimum requirement for this voucher.");
-        }
-
-        return userVoucher;
+        return found
+                .map(userVoucher -> {
+                    if (userVoucher.getStatus() != VoucherStatus.AVAILABLE) {
+                        throw new IllegalArgumentException("Voucher is not available for use.");
+                    }
+                    validateVoucherRules(userVoucher.getVoucher(), orderTotal);
+                    return userVoucher;
+                })
+                .orElseGet(() -> validateAndBuildPublicUserVoucher(code, userId, orderTotal));
     }
 
     @Override
@@ -254,8 +233,12 @@ class VoucherServiceImpl implements VoucherService {
     }
 
     @Override
+    @Transactional
     public VoucherApplicationResult applyVoucher(String code, Integer userId, BigDecimal subtotal) {
         UserVoucher userVoucher = validateAndGetVoucher(code, userId, subtotal);
+        if (userVoucher.getUserVoucherId() == null) {
+            incrementVoucherUsage(userVoucher.getVoucher());
+        }
         BigDecimal discount = calculateDiscount(userVoucher.getVoucher(), subtotal);
 
         return VoucherApplicationResult.builder()
@@ -269,6 +252,10 @@ class VoucherServiceImpl implements VoucherService {
     @Override
     @Transactional
     public void markVoucherAsUsed(Integer userVoucherId) {
+        if (userVoucherId == null) {
+            return;
+        }
+
         UserVoucher userVoucher = userVoucherRepository.findById(userVoucherId)
                 .orElseThrow(() -> new IllegalArgumentException("UserVoucher not found."));
 
@@ -281,12 +268,7 @@ class VoucherServiceImpl implements VoucherService {
         userVoucherRepository.save(userVoucher);
 
         Voucher voucher = userVoucher.getVoucher();
-        if (voucher.getUsedCount() == null) {
-             voucher.setUsedCount(1);
-        } else {
-             voucher.setUsedCount(voucher.getUsedCount() + 1);
-        }
-        voucherRepository.save(voucher);
+        incrementVoucherUsage(voucher);
     }
 
     @Override
@@ -315,7 +297,17 @@ class VoucherServiceImpl implements VoucherService {
     @Transactional
     public void releaseVoucher(Integer userId, String voucherCode) {
         UserVoucher userVoucher = userVoucherRepository.findByUser_UserIdAndVoucher_VoucherCode(userId, voucherCode)
-                .orElseThrow(() -> new IllegalArgumentException("UserVoucher not found for the given user and voucher code."));
+                .orElse(null);
+
+        if (userVoucher == null) {
+            Voucher voucher = voucherRepository.findByVoucherCode(voucherCode)
+                    .orElseThrow(() -> new IllegalArgumentException("Voucher not found for code: " + voucherCode));
+            if (isPublicVoucher(voucher)) {
+                decrementVoucherUsage(voucher);
+                return;
+            }
+            throw new IllegalArgumentException("UserVoucher not found for the given user and voucher code.");
+        }
 
         if (userVoucher.getStatus() != VoucherStatus.USED) {
             log.warn("Voucher is not in USED status, status={}", userVoucher.getStatus());
@@ -338,5 +330,73 @@ class VoucherServiceImpl implements VoucherService {
     public void delete(Integer id) {
 
         voucherRepository.deleteById(id);
+    }
+
+    private UserVoucher validateAndBuildPublicUserVoucher(String code, Integer userId, BigDecimal orderTotal) {
+        Voucher voucher = voucherRepository.findByVoucherCode(code)
+                .orElseThrow(() -> new IllegalArgumentException("Voucher not found or not assigned to user: " + code));
+
+        if (!isPublicVoucher(voucher)) {
+            throw new IllegalArgumentException("Voucher not found or not assigned to user: " + code);
+        }
+
+        validateVoucherRules(voucher, orderTotal);
+
+        return UserVoucher.builder()
+                .user(userRepository.getReferenceById(userId))
+                .voucher(voucher)
+                .status(VoucherStatus.AVAILABLE)
+                .assignedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private boolean isPublicVoucher(Voucher voucher) {
+        return voucher.getVoucherId() != null
+                && !userVoucherRepository.existsByVoucher_VoucherId(voucher.getVoucherId());
+    }
+
+    private void validateVoucherRules(Voucher voucher, BigDecimal orderTotal) {
+        if (Boolean.FALSE.equals(voucher.getIsActive())) {
+            throw new IllegalArgumentException("Voucher is inactive.");
+        }
+
+        if (Boolean.FALSE.equals(voucher.getIsValid())) {
+            throw new IllegalArgumentException("Voucher is currently invalid.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (voucher.getValidFrom() != null && now.isBefore(voucher.getValidFrom())) {
+            throw new IllegalArgumentException("Voucher is not yet valid.");
+        }
+
+        if (voucher.getValidTo() != null && now.isAfter(voucher.getValidTo())) {
+            throw new IllegalArgumentException("Voucher has expired.");
+        }
+
+        if (voucher.getUsageLimit() != null && voucher.getUsedCount() != null
+                && voucher.getUsedCount() >= voucher.getUsageLimit()) {
+            throw new IllegalArgumentException("Voucher usage limit reached.");
+        }
+
+        if (voucher.getMinOrderValue() != null && orderTotal != null
+                && orderTotal.compareTo(voucher.getMinOrderValue()) < 0) {
+            throw new IllegalArgumentException("Order total does not meet the minimum requirement for this voucher.");
+        }
+    }
+
+    private void incrementVoucherUsage(Voucher voucher) {
+        if (voucher.getUsedCount() == null) {
+            voucher.setUsedCount(1);
+        } else {
+            voucher.setUsedCount(voucher.getUsedCount() + 1);
+        }
+        voucherRepository.save(voucher);
+    }
+
+    private void decrementVoucherUsage(Voucher voucher) {
+        if (voucher.getUsedCount() != null && voucher.getUsedCount() > 0) {
+            voucher.setUsedCount(voucher.getUsedCount() - 1);
+            voucherRepository.save(voucher);
+        }
     }
 }
