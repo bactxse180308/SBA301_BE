@@ -37,6 +37,7 @@ public class SecurityConfig {
                                 "/api/public/**",
                                 "/api/v1/auth/**",
 //                                "/api/v1/**",
+                                "/ws-native/**",      // STOMP handshake (auth thực hiện tại CONNECT)
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",

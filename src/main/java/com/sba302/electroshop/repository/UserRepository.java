@@ -18,6 +18,10 @@ public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecifi
     boolean existsByEmail(String email);
     Optional<User> findByVerificationToken(String token);
 
+    /** Lấy một nhân viên (ADMIN) đang hoạt động để gán cho câu chào tự động của chat. */
+    Optional<User> findFirstByRole_RoleNameAndStatusAndIsDeletedFalse(
+            String roleName, com.sba302.electroshop.enums.UserStatus status);
+
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM User u WHERE u.registrationDate >= :startOfDay AND u.registrationDate < :endOfDay AND u.role.roleName = 'CUSTOMER'")
     Integer countNewCustomersByDateRange(@org.springframework.data.repository.query.Param("startOfDay") java.time.LocalDateTime startOfDay, @org.springframework.data.repository.query.Param("endOfDay") java.time.LocalDateTime endOfDay);
 

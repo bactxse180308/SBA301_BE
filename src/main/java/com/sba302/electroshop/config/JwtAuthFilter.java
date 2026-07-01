@@ -33,6 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         // Public endpoints của service này (nếu có), + swagger
         if (path.startsWith("/api/public")
+                || path.startsWith("/ws-native")
                 || path.startsWith("/api/v1/auth/login")
                 || path.startsWith("/api/v1/auth/register")
                 || path.startsWith("/api/v1/auth/forgot-password")
