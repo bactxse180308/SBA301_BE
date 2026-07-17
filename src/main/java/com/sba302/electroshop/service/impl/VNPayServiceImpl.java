@@ -95,6 +95,8 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_ExpireDate", expireDate);
 
         log.info("=== VNPAY CREATE PARAMS ===");
+        log.info("vnp_ReturnUrl: {}", vnPayProperties.getReturnUrl());
+        log.info("vnp_IpnUrl: {}", vnPayProperties.getIpnUrl());
         new TreeMap<>(params).forEach((key, value) -> log.info("{}={}", key, value));
 
         String hashData = VNPayUtil.buildHashData(params);
@@ -103,7 +105,7 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_SecureHash", secureHash);
 
         String paymentUrl = vnPayProperties.getPaymentUrl() + "?" + VNPayUtil.buildQueryString(params);
-        log.info("VNPay final payment URL: {}", paymentUrl);
+        log.info("Payment URL created: {}", paymentUrl);
 
         // Lưu transaction, gán order hoặc bulkOrder tương ứng
         PaymentTransaction transaction = PaymentTransaction.builder()
