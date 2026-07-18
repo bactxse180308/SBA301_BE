@@ -18,7 +18,11 @@ public interface ChatService {
 
     List<ChatMessageResponse> historyForCustomer(Integer customerId, Long beforeId, int size);
 
-    ChatMessageResponse sendTextAsCustomer(Integer customerId, String content, Integer productId);
+    ChatMessageResponse sendTextAsCustomer(
+            Integer customerId,
+            String content,
+            Integer productId,
+            Integer orderId);
 
     void markReadByCustomer(Integer customerId);
 

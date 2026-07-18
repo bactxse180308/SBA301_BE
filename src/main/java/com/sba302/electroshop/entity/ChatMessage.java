@@ -59,6 +59,10 @@ public class ChatMessage {
     @Column(name = "product_price")
     private java.math.BigDecimal productPrice;
 
+    // Chỉ lưu liên kết. Trạng thái/tổng tiền/ngày đặt được lấy live từ Order khi trả response.
+    @Column(name = "order_id")
+    private Integer orderId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

@@ -5,15 +5,18 @@ import com.sba302.electroshop.dto.response.ChatMessageResponse;
 import com.sba302.electroshop.dto.response.ConversationResponse;
 import com.sba302.electroshop.entity.ChatMessage;
 import com.sba302.electroshop.entity.Conversation;
+import com.sba302.electroshop.entity.Order;
 import com.sba302.electroshop.entity.Product;
 import com.sba302.electroshop.entity.User;
 import com.sba302.electroshop.enums.ConversationStatus;
+import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.enums.SenderRole;
 import com.sba302.electroshop.enums.UserStatus;
 import com.sba302.electroshop.exception.ApiException;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.repository.ChatMessageRepository;
 import com.sba302.electroshop.repository.ConversationRepository;
+import com.sba302.electroshop.repository.OrderRepository;
 import com.sba302.electroshop.repository.ProductRepository;
 import com.sba302.electroshop.repository.UserRepository;
 import com.sba302.electroshop.service.ChatService;
@@ -29,6 +32,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +50,7 @@ class ChatServiceImpl implements ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatProperties chatProperties;
 
@@ -66,25 +74,37 @@ class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public ChatMessageResponse sendTextAsCustomer(Integer customerId, String content, Integer productId) {
+    public ChatMessageResponse sendTextAsCustomer(
+            Integer customerId,
+            String content,
+            Integer productId,
+            Integer orderId) {
         String text = content == null ? "" : content.trim();
         Product product = (productId == null) ? null
                 : productRepository.findById(productId)
                         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm id=" + productId));
-        if (text.isBlank() && product == null) {
+        Order order = loadShippedOrderOwnedByCustomer(customerId, orderId);
+        if (text.isBlank() && product == null && order == null) {
             throw new ApiException("Nội dung tin nhắn không được để trống");
         }
 
         Conversation c = getOrCreateActiveConversation(customerId);
         boolean isFirst = chatMessageRepository.countByConversation_Id(c.getId()) == 0;
 
-        ChatMessage saved = saveMessage(c, loadUser(customerId), SenderRole.CUSTOMER, text, product);
-        fanout(c, ChatMessageResponse.from(saved, false)); // tin mới: chưa đọc
+        ChatMessage saved = saveMessage(
+                c,
+                loadUser(customerId),
+                SenderRole.CUSTOMER,
+                text,
+                product,
+                order != null ? order.getOrderId() : null);
+        ChatMessageResponse response = ChatMessageResponse.from(saved, false, order);
+        fanout(c, response); // tin mới: chưa đọc
 
         if (isFirst) {
             maybeAutoReply(c);
         }
-        return ChatMessageResponse.from(saved, false);
+        return response;
     }
 
     @Override
@@ -178,17 +198,40 @@ class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng id=" + userId));
     }
 
-    private ChatMessage saveMessage(Conversation c, User sender, SenderRole role, String content) {
-        return saveMessage(c, sender, role, content, null);
+    /**
+     * Chỉ cho khách đính kèm đơn SHIPPED của chính mình.
+     * Truy vấn đồng thời theo orderId + customerId để không lộ sự tồn tại của đơn người khác.
+     */
+    private Order loadShippedOrderOwnedByCustomer(Integer customerId, Integer orderId) {
+        if (orderId == null) {
+            return null;
+        }
+        Order order = orderRepository.findByOrderIdAndUser_UserId(orderId, customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+        if (order.getOrderStatus() != OrderStatus.SHIPPED) {
+            throw new ApiException("Chỉ có thể đính kèm đơn hàng đang giao");
+        }
+        return order;
     }
 
-    /** Lưu tin nhắn, kèm snapshot sản phẩm nếu [product] != null. */
-    private ChatMessage saveMessage(Conversation c, User sender, SenderRole role, String content, Product product) {
+    private ChatMessage saveMessage(Conversation c, User sender, SenderRole role, String content) {
+        return saveMessage(c, sender, role, content, null, null);
+    }
+
+    /** Lưu snapshot sản phẩm và chỉ lưu link orderId để dữ liệu đơn luôn live. */
+    private ChatMessage saveMessage(
+            Conversation c,
+            User sender,
+            SenderRole role,
+            String content,
+            Product product,
+            Integer orderId) {
         ChatMessage.ChatMessageBuilder builder = ChatMessage.builder()
                 .conversation(c)
                 .sender(sender)
                 .senderRole(role)
-                .content(content);
+                .content(content)
+                .orderId(orderId);
         if (product != null) {
             builder.productId(product.getProductId())
                     .productName(product.getProductName())
@@ -208,8 +251,15 @@ class ChatServiceImpl implements ChatService {
         Page<ChatMessage> page = (beforeId == null)
                 ? chatMessageRepository.findByConversation_IdOrderByIdDesc(c.getId(), pageable)
                 : chatMessageRepository.findByConversation_IdAndIdLessThanOrderByIdDesc(c.getId(), beforeId, pageable);
-        return page.getContent().stream()
-                .map(m -> ChatMessageResponse.from(m, isRead(m, c)))
+        List<ChatMessage> messages = page.getContent();
+        Map<Integer, Order> ordersById = orderRepository.findAllById(messages.stream()
+                        .map(ChatMessage::getOrderId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Order::getOrderId, Function.identity()));
+        return messages.stream()
+                .map(m -> ChatMessageResponse.from(m, isRead(m, c), ordersById.get(m.getOrderId())))
                 .toList();
     }
 

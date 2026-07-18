@@ -11,9 +11,12 @@ import com.sba302.electroshop.entity.Order;
 import com.sba302.electroshop.enums.OrderStatus;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpecificationExecutor<Order> {
+
+    Optional<Order> findByOrderIdAndUser_UserId(Integer orderId, Integer userId);
 
     @Query("SELECT o FROM Order o JOIN FETCH o.user LEFT JOIN FETCH o.userVoucher uv LEFT JOIN FETCH uv.voucher " +
            "WHERE LOWER(o.user.fullName) LIKE :keyword " +
