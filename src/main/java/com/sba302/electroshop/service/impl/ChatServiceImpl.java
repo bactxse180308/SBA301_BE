@@ -9,7 +9,6 @@ import com.sba302.electroshop.entity.Order;
 import com.sba302.electroshop.entity.Product;
 import com.sba302.electroshop.entity.User;
 import com.sba302.electroshop.enums.ConversationStatus;
-import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.enums.SenderRole;
 import com.sba302.electroshop.enums.UserStatus;
 import com.sba302.electroshop.exception.ApiException;
@@ -83,7 +82,7 @@ class ChatServiceImpl implements ChatService {
         Product product = (productId == null) ? null
                 : productRepository.findById(productId)
                         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm id=" + productId));
-        Order order = loadShippedOrderOwnedByCustomer(customerId, orderId);
+        Order order = loadOrderOwnedByCustomer(customerId, orderId);
         if (text.isBlank() && product == null && order == null) {
             throw new ApiException("Nội dung tin nhắn không được để trống");
         }
@@ -199,19 +198,15 @@ class ChatServiceImpl implements ChatService {
     }
 
     /**
-     * Chỉ cho khách đính kèm đơn SHIPPED của chính mình.
+     * Chỉ cho khách đính kèm đơn hàng của chính mình.
      * Truy vấn đồng thời theo orderId + customerId để không lộ sự tồn tại của đơn người khác.
      */
-    private Order loadShippedOrderOwnedByCustomer(Integer customerId, Integer orderId) {
+    private Order loadOrderOwnedByCustomer(Integer customerId, Integer orderId) {
         if (orderId == null) {
             return null;
         }
-        Order order = orderRepository.findByOrderIdAndUser_UserId(orderId, customerId)
+        return orderRepository.findByOrderIdAndUser_UserId(orderId, customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
-        if (order.getOrderStatus() != OrderStatus.SHIPPED) {
-            throw new ApiException("Chỉ có thể đính kèm đơn hàng đang giao");
-        }
-        return order;
     }
 
     private ChatMessage saveMessage(Conversation c, User sender, SenderRole role, String content) {

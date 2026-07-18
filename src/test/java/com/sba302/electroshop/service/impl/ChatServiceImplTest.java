@@ -9,7 +9,6 @@ import com.sba302.electroshop.entity.User;
 import com.sba302.electroshop.enums.ConversationStatus;
 import com.sba302.electroshop.enums.OrderStatus;
 import com.sba302.electroshop.enums.SenderRole;
-import com.sba302.electroshop.exception.ApiException;
 import com.sba302.electroshop.exception.ResourceNotFoundException;
 import com.sba302.electroshop.repository.ChatMessageRepository;
 import com.sba302.electroshop.repository.ConversationRepository;
@@ -72,13 +71,13 @@ class ChatServiceImplTest {
     }
 
     @Test
-    void sendTextAsCustomerAttachesOwnedShippedOrder() {
+    void sendTextAsCustomerAttachesOwnedOrderRegardlessOfStatus() {
         LocalDateTime orderDate = LocalDateTime.of(2026, 7, 18, 9, 30);
         User customer = customer();
         Order order = Order.builder()
                 .orderId(42)
                 .user(customer)
-                .orderStatus(OrderStatus.SHIPPED)
+                .orderStatus(OrderStatus.PENDING)
                 .finalAmount(new BigDecimal("1250000"))
                 .orderDate(orderDate)
                 .build();
@@ -103,7 +102,7 @@ class ChatServiceImplTest {
                 CUSTOMER_ID, "", null, order.getOrderId());
 
         assertEquals(order.getOrderId(), response.orderId());
-        assertEquals(OrderStatus.SHIPPED, response.orderStatus());
+        assertEquals(OrderStatus.PENDING, response.orderStatus());
         assertEquals(order.getFinalAmount(), response.orderTotal());
         assertEquals(orderDate, response.orderDate());
 
@@ -119,23 +118,6 @@ class ChatServiceImplTest {
 
         assertThrows(
                 ResourceNotFoundException.class,
-                () -> chatService.sendTextAsCustomer(CUSTOMER_ID, "", null, 42));
-
-        verifyNoInteractions(conversationRepository, chatMessageRepository);
-    }
-
-    @Test
-    void sendTextAsCustomerRejectsOrderThatIsNotShipped() {
-        Order pendingOrder = Order.builder()
-                .orderId(42)
-                .user(customer())
-                .orderStatus(OrderStatus.PENDING)
-                .build();
-        when(orderRepository.findByOrderIdAndUser_UserId(42, CUSTOMER_ID))
-                .thenReturn(Optional.of(pendingOrder));
-
-        assertThrows(
-                ApiException.class,
                 () -> chatService.sendTextAsCustomer(CUSTOMER_ID, "", null, 42));
 
         verifyNoInteractions(conversationRepository, chatMessageRepository);

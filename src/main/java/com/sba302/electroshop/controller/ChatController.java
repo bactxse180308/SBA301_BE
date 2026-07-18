@@ -49,7 +49,7 @@ public class ChatController {
     }
 
     @PostMapping("/messages")
-    @Operation(summary = "Gửi tin nhắn text, có thể đính kèm sản phẩm hoặc đơn đang giao")
+    @Operation(summary = "Gửi tin nhắn text, có thể đính kèm sản phẩm hoặc đơn hàng")
     public ApiResponse<ChatMessageResponse> sendMessage(@Valid @RequestBody SendMessageRequest request) {
         return ApiResponse.success(chatService.sendTextAsCustomer(
                 getCurrentUserId(),
